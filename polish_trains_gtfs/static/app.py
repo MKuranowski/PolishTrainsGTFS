@@ -1,15 +1,14 @@
 # SPDX-FileCopyrightText: 2025 Mikołaj Kuranowski
 # SPDX-License-Identifier: MIT
 
-import os
 from argparse import ArgumentParser, Namespace
 from datetime import timedelta
-from pathlib import Path
 
 from impuls import App, HTTPResource, Pipeline, PipelineOptions
 from impuls.resource import TimeLimitedResource
 from impuls.tasks import GenerateTripHeadsign, SaveGTFS
 
+from ..apikey import get_apikey
 from .load_agencies import LoadAgencies
 from .load_data_version import LoadDataVersion
 from .load_routes import LoadRoutes
@@ -65,7 +64,7 @@ class PolishTrainsGTFS(App):
         parser.add_argument("-o", "--output", default="polish_trains.zip", help="output file path")
 
     def prepare(self, args: Namespace, options: PipelineOptions) -> Pipeline:
-        apikey = self.get_apikey()
+        apikey = get_apikey()
         return Pipeline(
             options=options,
             resources={
@@ -85,17 +84,6 @@ class PolishTrainsGTFS(App):
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
-
-    @staticmethod
-    def get_apikey() -> str:
-        key = os.getenv("PKP_PLK_APIKEY")
-        if not key and (path := os.getenv("PKP_PLK_APIKEY_FILE")):
-            key = Path(path).read_text("ascii")
-
-        if not key:
-            raise ValueError("PKP_PLK_APIKEY environment variable not set")
-
-        return key.strip()
 
     @staticmethod
     def endpoint(path: str, apikey: str) -> TimeLimitedResource:
