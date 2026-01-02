@@ -1,62 +1,23 @@
-# SPDX-FileCopyrightText: 2026 Mikołaj Kuranowski
+# SPDX-FileCopyrightText: 2025-2026 Mikołaj Kuranowski
 # SPDX-License-Identifier: MIT
 
-import json
 from collections.abc import Iterable, Mapping
+from datetime import datetime, timezone
 from operator import itemgetter
 from typing import IO, Any, cast
+from zoneinfo import ZoneInfo
 
-import ijson  # type: ignore
 from impuls import DBConnection, Task, TaskRuntime
-from impuls.model import Date
+from impuls.model import Attribution, Date, FeedInfo
 
-# | Short Key | Long Key |
-# |-----------|----------|
-# | sid       | scheduleId |
-# | oid       | orderId |
-# | toid      | trainOrderId |
-# | nm        | name |
-# | cc        | carrierCode |
-# | nn        | nationalNumber |
-# | ian       | internationalArrivalNumber |
-# | idn       | internationalDepartureNumber |
-# | ccs       | commercialCategorySymbol |
-# | pn        | posterNotes |
-# | rel       | isRelated |
-# | od        | operatingDates |
-# | st        | stations |
-# | id        | stationId |
-# | ord       | orderNumber |
-# | acc       | arrivalCommercialCategory |
-# | atn       | arrivalTrainNumber |
-# | apl       | arrivalPlatform |
-# | atr       | arrivalTrack |
-# | ady       | arrivalDay |
-# | atm       | arrivalTime |
-# | dcc       | departureCommercialCategory |
-# | dtn       | departureTrainNumber |
-# | dpl       | departurePlatform |
-# | dtr       | departureTrack |
-# | ddy       | departureDay |
-# | dtm       | departureTime |
-# | sti       | stopTypeId |
-# | stn       | stopTypeName |
-# | cn        | connections |
-# | id        | id |
-# | tc        | typeCode |
-# | tn        | typeName |
-# | sid       | stationId |
-# | wn        | wagonNumbers |
-# | t1o       | train1OrderId |
-# | t1s       | train1StationOrder |
-# | t1d       | train1DayOffset |
-# | t2o       | train2OrderId |
-# | t2s       | train2StationOrder |
-# | t2d       | train2DayOffset |
+from .. import json
+from ..ids import get_trip_id
 
 MINUTE = 60
 HOUR = 60 * MINUTE
 DAY = 24 * HOUR
+
+TZ = ZoneInfo("Europe/Warsaw")
 
 
 class LoadSchedules(Task):
@@ -82,39 +43,85 @@ class LoadSchedules(Task):
     def execute(self, r: TaskRuntime) -> None:
         self.clear()
 
-        with r.resources[self.r].open_text(encoding="utf-8") as f:
+        with r.resources[self.r].open_binary() as f:
             self.load_agencies(f)
             self.load_routes(f)
             self.load_stops(f)
             with r.db.transaction():
+                self.create_attributions(r.db)
+                self.load_feed_info(r.db, f)
                 self.load_schedules(r.db, f)
 
-    def load_stops(self, f: IO[str]) -> None:
-        f.seek(0)
-        for _, stop in ijson.kvitems(f, "dc.st", use_float=True):
+    def create_attributions(self, db: DBConnection) -> None:
+        db.create_many(
+            Attribution,
+            (
+                Attribution(
+                    id="1",
+                    organization_name="Data: PKP Polskie linie Kolejowe S.A.",
+                    url="https://www.plk-sa.pl/klienci-i-kontrahenci/api-otwarte-dane",
+                    is_authority=True,
+                    is_data_source=True,
+                ),
+                Attribution(
+                    id="2",
+                    organization_name="GTFS: Mikołaj Kuranowski",
+                    url="https://mkuran.pl/gtfs/",
+                    is_producer=True,
+                ),
+            ),
+        )
+
+    def load_feed_info(self, db: DBConnection, f: IO[bytes]) -> None:
+        timestamp = self.load_update_timestamp(f).astimezone(TZ)
+        start_date, end_date = self.load_feed_dates(f)
+        db.create(
+            FeedInfo(
+                publisher_name="Mikołaj Kuranowski",
+                publisher_url="https://mkuran.pl/gtfs",
+                lang="pl",
+                version=timestamp.isoformat(),
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
+
+    @staticmethod
+    def load_update_timestamp(f: IO[bytes]) -> datetime:
+        if ts := json.first(f, "ts"):
+            return datetime.fromisoformat(ts)
+        return datetime.min.replace(tzinfo=timezone.utc)
+
+    @staticmethod
+    def load_feed_dates(f: IO[bytes]) -> tuple[Date, Date]:
+        if pr := json.first(f, "pr"):
+            start = Date.from_ymd_str(pr["f"][:10])
+            end = Date.from_ymd_str(pr["t"][:10])
+        else:
+            start = Date(1, 1, 1)
+            end = Date(1, 1, 1)
+        return start, end
+
+    def load_stops(self, f: IO[bytes]) -> None:
+        for _, stop in json.object_iter(f, "dc.st"):
             self.stop_names[stop["id"]] = stop.get("nm", "")
 
-    def load_agencies(self, f: IO[str]) -> None:
-        f.seek(0)
-        for id, name in ijson.kvitems(f, "dc.cr", use_float=True):
+    def load_agencies(self, f: IO[bytes]) -> None:
+        for id, name in json.object_iter(f, "dc.cr"):
             self.agency_names[id.strip()] = name
 
-    def load_routes(self, f: IO[str]) -> None:
-        f.seek(0)
-        for code, name in ijson.kvitems(f, "dc.cc", use_float=True):
+    def load_routes(self, f: IO[bytes]) -> None:
+        for code, name in json.object_iter(f, "dc.cc"):
             self.route_names[code] = name
 
-    def load_schedules(self, db: DBConnection, f: IO[str]) -> None:
-        f.seek(0)
-        for route in ijson.items(f, "rt.item", use_float=True):
+    def load_schedules(self, db: DBConnection, f: IO[bytes]) -> None:
+        for route in json.list_iter(f, "rt.item"):
             self.process_route(db, route)
 
     def process_route(self, db: DBConnection, r: Mapping[str, Any]) -> None:
-        schedule_id = cast(int, r["sid"])
-        order_id = cast(int, r["oid"])
-        trip_id = f"{schedule_id}_{order_id}"
-
+        trip_id = get_trip_id(r["sid"], r["oid"], r.get("toid"))
         route_stations = cast(list[dict[str, Any]], r["st"])
+
         if len(route_stations) < 2:
             self.logger.warning("Trip %s has less than 2 stops - skipping", trip_id)
             return
@@ -125,15 +132,20 @@ class LoadSchedules(Task):
 
         plk_number = get_fallback(r, "nn", "idn", "ian", default="")
         display_number = get_fallback(r, "idn", "ian", "nn", default="")
-        name = get_fallback(r, "nm", default="").title()
-        trip_short_name = merge_number_and_name(display_number, name)
+        long_name = get_fallback(r, "nm", default="")
 
-        extra_fields = json.dumps({"order_id": str(order_id), "plk_train_number": plk_number})
+        extra_fields = json.dumps(
+            {
+                "order_id": str(r["oid"]),
+                "plk_train_number": plk_number,
+                "trip_long_name": long_name,
+            }
+        )
 
         db.raw_execute(
             "INSERT INTO trips (trip_id, route_id, calendar_id, short_name, extra_fields_json) "
             "VALUES (?, ?, ?, ?, ?)",
-            (trip_id, route_id, calendar_id, trip_short_name, extra_fields),
+            (trip_id, route_id, calendar_id, display_number, extra_fields),
         )
 
         route_stations.sort(key=itemgetter("ord"))
@@ -192,8 +204,6 @@ class LoadSchedules(Task):
         return agency_id
 
     def get_route_id(self, db: DBConnection, agency_id: str, route_code: str) -> str:
-        if "/" in route_code and route_code not in self.route_names:
-            self.logger.warning("Agency %s uses multiple route codes, %s", agency_id, route_code)
         route_id = f"{agency_id}_{route_code}"
         db.raw_execute(
             "INSERT OR IGNORE INTO routes (route_id, agency_id, short_name, long_name, type) "
@@ -225,14 +235,6 @@ class LoadSchedules(Task):
 
             self.calendars[dates] = calendar_id
             return calendar_id
-
-
-def merge_number_and_name(number: str, name: str) -> str:
-    if number and name:
-        if number in name:
-            return name
-        return f"{number} {name}"
-    return number or name
 
 
 def parse_time(x: str, day_offset: int = 0) -> int:

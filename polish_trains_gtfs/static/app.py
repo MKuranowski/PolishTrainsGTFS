@@ -3,13 +3,14 @@
 
 from argparse import ArgumentParser, Namespace
 from datetime import timedelta
+from typing import cast
 
 from impuls import App, HTTPResource, Pipeline, PipelineOptions
+from impuls.model import Date
 from impuls.resource import TimeLimitedResource
 from impuls.tasks import GenerateTripHeadsign, SaveGTFS
 
 from ..apikey import get_apikey
-from .load_data_version import LoadDataVersion
 from .load_schedules import LoadSchedules
 
 RESOURCE_TIME_LIMIT = timedelta(days=1)
@@ -26,7 +27,14 @@ GTFS_HEADERS = {
         "is_data_source",
     ),
     "calendar_dates.txt": ("date", "service_id", "exception_type"),
-    "feed_info.txt": ("feed_publisher_name", "feed_publisher_url", "feed_lang", "feed_version"),
+    "feed_info.txt": (
+        "feed_publisher_name",
+        "feed_publisher_url",
+        "feed_lang",
+        "feed_version",
+        "feed_start_date",
+        "feed_end_date",
+    ),
     "routes.txt": (
         "route_id",
         "agency_id",
@@ -49,6 +57,7 @@ GTFS_HEADERS = {
         "route_id",
         "service_id",
         "trip_short_name",
+        "trip_long_name",
         "trip_headsign",
         "order_id",
         "plk_train_number",
@@ -59,29 +68,34 @@ GTFS_HEADERS = {
 class PolishTrainsGTFS(App):
     def add_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument("-o", "--output", default="polish_trains.zip", help="output file path")
+        parser.add_argument(
+            "-d",
+            "--start-date",
+            type=Date.from_ymd_str,
+            default=Date.today(),
+            help="start date for the schedules",
+        )
 
     def prepare(self, args: Namespace, options: PipelineOptions) -> Pipeline:
         apikey = get_apikey()
+        start_date = cast(Date, args.start_date)
+        end_date = start_date.add_days(31)
+
         return Pipeline(
             options=options,
             resources={
-                "data_version.json": self.endpoint("data-version", apikey),
-                "schedules.json": self.endpoint("schedules/shortened", apikey),
+                "schedules.json": TimeLimitedResource(
+                    r=HTTPResource.get(
+                        "https://pdp-api.plk-sa.pl/api/v1/schedules/shortened",
+                        headers={"X-Api-Key": apikey},
+                        params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
+                    ),
+                    minimal_time_between=RESOURCE_TIME_LIMIT,
+                )
             },
             tasks=[
-                LoadDataVersion(),
                 LoadSchedules(),
                 GenerateTripHeadsign(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
-        )
-
-    @staticmethod
-    def endpoint(path: str, apikey: str) -> TimeLimitedResource:
-        return TimeLimitedResource(
-            r=HTTPResource.get(
-                f"https://pdp-api.plk-sa.pl/api/v1/{path}",
-                headers={"X-Api-Key": apikey},
-            ),
-            minimal_time_between=RESOURCE_TIME_LIMIT,
         )
