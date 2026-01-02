@@ -12,6 +12,7 @@ from impuls.tasks import GenerateTripHeadsign, SaveGTFS
 
 from ..apikey import get_apikey
 from .load_schedules import LoadSchedules
+from .load_stops import LoadStops
 
 RESOURCE_TIME_LIMIT = timedelta(days=1)
 
@@ -91,10 +92,14 @@ class PolishTrainsGTFS(App):
                         params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
                     ),
                     minimal_time_between=RESOURCE_TIME_LIMIT,
-                )
+                ),
+                "pl_rail_map.osm": HTTPResource.get(
+                    "https://raw.githubusercontent.com/MKuranowski/PLRailMap/master/plrailmap.osm"
+                ),
             },
             tasks=[
                 LoadSchedules(),
+                LoadStops(),
                 GenerateTripHeadsign(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
