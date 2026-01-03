@@ -14,6 +14,7 @@ from ..apikey import get_apikey
 from .curate_routes import CurateRoutes
 from .load_schedules import LoadSchedules
 from .load_stops import LoadStops
+from .shift_negative_times import ShiftNegativeTimes
 
 RESOURCE_TIME_LIMIT = timedelta(days=1)
 
@@ -118,6 +119,14 @@ class PolishTrainsGTFS(App):
                 RemoveUnusedEntities(),
                 CurateRoutes(),
                 LoadStops(),
+                ShiftNegativeTimes(),
+                ExecuteSQL(
+                    statement=(
+                        "UPDATE stop_times SET arrival_time = arrival_time - 3600, "
+                        "departure_time = departure_time - 3600 WHERE stop_id = '179200'"
+                    ),
+                    task_name="FixTimesAtMockava",
+                ),
                 GenerateTripHeadsign(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
