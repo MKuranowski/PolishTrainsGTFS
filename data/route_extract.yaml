@@ -100,11 +100,7 @@ KD:
     - route_code: "D23"
       select:
         - passes_through: [42887]  # Wschowa
-    - route_code: "D20"
-      select:
-        - passes_through: [60400, 42002]  # Ścinawa & Nowa Sól
-        - passes_through: [60400, 27805]  # Ścinawa & Zielona Góra Główna
-        - passes_through: [60103, 27805]  # Wrocław Główny & Zielona Góra Główna
+    # D20 needs to match after D12
 
     - route_code: "D18"
       select:
