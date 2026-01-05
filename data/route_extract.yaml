@@ -187,3 +187,19 @@ KD:
         - passes_through: [53009]  # Legnica
         - passes_through: [59048]  # Środa Śląska
         - passes_through: [51920]  # Gierałtów Wykroty
+
+KW:
+  routes:
+    - route_code: '\1'
+      select: [{name: '/(PKM[0-9])'}]
+    - route_code: '\1'
+      select: [{name: '(PKM[0-9])'}]
+    - route_code: ''
+      select: [{retain: true}]
+
+PR:
+  routes:
+    - route_code: '\1'
+      select: [{name: '^(PKM[0-9])$'}]
+    - route_code: ''
+      select: [{retain: true}]

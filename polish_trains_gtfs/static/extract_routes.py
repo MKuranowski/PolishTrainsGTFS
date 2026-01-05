@@ -42,6 +42,9 @@ class Selector(ABC):
     def __init__(self, route_code: str) -> None:
         self.route_code = route_code
 
+    def and_(self, other: "Selector") -> "Selector":
+        return CombinedSelector(self.route_code, (self, other))
+
     @abstractmethod
     def requires_stops(self) -> bool: ...
 
@@ -49,12 +52,50 @@ class Selector(ABC):
     def matches(self, t: Trip, stops: Iterable[str]) -> str | None: ...
 
 
+class CombinedSelector(Selector):
+    selectors: list[Selector]
+
+    def __init__(self, route_code: str, selectors: Iterable[Selector] = ()) -> None:
+        super().__init__(route_code)
+        self.selectors = list(selectors)
+
+    def and_(self, other: Selector) -> "CombinedSelector":
+        self.selectors.append(other)
+        return self
+
+    def requires_stops(self) -> bool:
+        return any(i.requires_stops() for i in self.selectors)
+
+    def matches(self, t: Trip, stops: Iterable[str]) -> str | None:
+        code: str | None = None
+        for s in self.selectors:
+            if (m := s.matches(t, stops)) is not None:
+                code = code or self.route_code or m
+            else:
+                return None  # short circuit
+        return code
+
+
 class AnySelector(Selector):
+    def and_[T: Selector](self, other: T) -> T:
+        return other
+
     def requires_stops(self) -> bool:
         return False
 
     def matches(self, t: Trip, stops: Iterable[str]) -> str | None:
         return self.route_code
+
+
+class RetainSelector(Selector):
+    def __init__(self) -> None:
+        super().__init__("")
+
+    def requires_stops(self) -> bool:
+        return False
+
+    def matches(self, t: Trip, stops: Iterable[str]) -> str | None:
+        return t.route_id.partition("_")[2]
 
 
 class NameSelector(Selector):
@@ -87,15 +128,24 @@ class PassesThroughSelector(Selector):
 
 
 def create_selector_from_config(code: str, cfg: SelectorConfig) -> Selector:
-    match cfg:
-        case {"name": name_pattern} if len(cfg) == 1:
-            return NameSelector(name_pattern, code)
-        case {"passes_through": required_stops} if len(cfg) == 1:
-            return PassesThroughSelector({str(i) for i in required_stops}, code)
-        case {} if len(cfg) == 0:
-            return AnySelector(code)
-        case _:
-            raise ValueError(f"unknown selector config: {cfg}")
+    s: Selector = AnySelector(code)
+    unused_keys = set(cfg.keys())
+
+    if cfg.get("retain"):
+        unused_keys.discard("retain")
+        s = s.and_(RetainSelector())
+
+    if name_pattern := cfg.get("name"):
+        unused_keys.discard("name")
+        s = s.and_(NameSelector(name_pattern, code))
+
+    if required_stops := cfg.get("passes_through"):
+        unused_keys.discard("passes_through")
+        s = s.and_(PassesThroughSelector({str(i) for i in required_stops}, code))
+
+    if unused_keys:
+        raise ValueError(f"Unknown selector keys: {', '.join(sorted(unused_keys))}")
+    return s
 
 
 class ExtractRoutes(Task):

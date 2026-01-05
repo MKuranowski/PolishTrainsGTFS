@@ -31,10 +31,12 @@ INVALID_NAMES: Mapping[str, Sequence[re.Pattern[str]]] = {
     # Key "" can be used to apply a pattern to all agencies
     "KD": [re.compile(r"^DKA$")],
     "KS": [re.compile(r"^S[0-9S/]+\s*")],
+    "KW": [re.compile(r"^PKM[0-9](?:/PKM[0-9])*\s*")],
     "LEO": [re.compile(r"^LEO EXPRESS$", re.I)],
     "PR": [
         re.compile(r"^F7/D18$"),
         re.compile(r"^KZ\s?[0-9]$"),
+        re.compile(r"^PKM[0-9]$"),
         re.compile(r"^RB[0-9][0-9]?$"),
         re.compile(r"^S[0-9]+$"),
         re.compile(r"^SKA[0-9]$"),
