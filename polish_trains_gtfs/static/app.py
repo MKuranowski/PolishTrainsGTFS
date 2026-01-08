@@ -5,9 +5,8 @@ from argparse import ArgumentParser, Namespace
 from datetime import timedelta
 from typing import cast
 
-from impuls import App, HTTPResource, Pipeline, PipelineOptions
+from impuls import App, HTTPResource, LocalResource, Pipeline, PipelineOptions
 from impuls.model import Date
-from impuls.resource import LocalResource, TimeLimitedResource
 from impuls.tasks import ExecuteSQL, GenerateTripHeadsign, RemoveUnusedEntities, SaveGTFS
 
 from ..apikey import get_apikey
@@ -104,13 +103,10 @@ class PolishTrainsGTFS(App):
         return Pipeline(
             options=options,
             resources={
-                "schedules.json": TimeLimitedResource(
-                    r=HTTPResource.get(
-                        "https://pdp-api.plk-sa.pl/api/v1/schedules/shortened",
-                        headers={"X-Api-Key": apikey},
-                        params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
-                    ),
-                    minimal_time_between=RESOURCE_TIME_LIMIT,
+                "schedules.json": HTTPResource.get(
+                    "https://pdp-api.plk-sa.pl/api/v1/schedules/shortened",
+                    headers={"X-Api-Key": apikey},
+                    params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
                 ),
                 "pl_rail_map.osm": HTTPResource.get(
                     "https://raw.githubusercontent.com/MKuranowski/PLRailMap/master/plrailmap.osm"
