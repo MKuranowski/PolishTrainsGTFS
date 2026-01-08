@@ -604,6 +604,17 @@ agencies:
         long_name: "Łódzka Kolej Aglomeracyjna"
         color: "FFD600"
 
+  - id: "ODEG"
+    name: "Ostdeutsche Eisenbahn"
+    url: "https://www.odeg.de/"
+    phone: "+49 03581 764 89 10"
+    routes:
+      - id: "ODEG"
+        match: [{}]
+        short_name: "ODEG"
+        long_name: "Ostdeutsche Eisenbahn"
+        color: "007073"
+
   - id: "PR"
     name: "PolRegio"
     url: "https://polregio.pl/"
