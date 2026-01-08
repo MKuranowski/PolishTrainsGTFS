@@ -148,6 +148,7 @@ KD:
 
     - route_code: "D8"
       select:
+        - passes_through: [59352]  # Siedlec Trzebnicki
         - passes_through: [59394]  # Trzebnica
 
     - route_code: "D7"
