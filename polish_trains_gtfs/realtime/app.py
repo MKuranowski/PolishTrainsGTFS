@@ -11,8 +11,8 @@ from typing import Self
 from impuls.tools import logs
 
 from ..apikey import get_apikey
-from . import lookup
 from .delays import fetch_delays
+from .schedules import Schedules
 
 
 @dataclass
@@ -63,9 +63,9 @@ def main(argv: Sequence[str] | None = None) -> None:
     logs.initialize(verbose=False)
     apikey = get_apikey()
 
-    lookup_table = lookup.load_from_gtfs(args.gtfs)
+    schedules = Schedules.load_from_gtfs(args.gtfs)
     # facts = fetch_alerts(apikey).merge(fetch_delays(apikey))
-    facts = fetch_delays(apikey, lookup_table)
+    facts = fetch_delays(apikey, schedules)
 
     update_file(
         str(facts.as_gtfs_rt()) if args.human_readable else facts.as_gtfs_rt().SerializeToString(),

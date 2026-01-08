@@ -1,17 +1,19 @@
-# SPDX-FileCopyrightText: 2025 Mikołaj Kuranowski
+# SPDX-FileCopyrightText: 2025-2026 Mikołaj Kuranowski
 # SPDX-License-Identifier: MIT
 
 import logging
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import datetime
 from typing import Any, cast
 
 import requests
+from impuls.model import Date
 
 from .. import json
-from . import gtfs_realtime_pb2, lookup
+from . import gtfs_realtime_pb2
 from .fact import Fact, FactContainer
+from .schedules import OrderKey, Schedules, StopTime
 from .tools import TripDate
 
 logger = logging.getLogger("Delays")
@@ -25,14 +27,14 @@ class Stats:
     total: int = 0
     matched: int = 0
     invalid_order_id: int = 0
-    invalid_start_date: int = 0
+    outside_feed_dates: int = 0
 
     def __str__(self) -> str:
         matched_percentage = 100 * self.matched / self.total
         return (
             f"matched {self.matched} / {self.total} ({matched_percentage:.2f} %); "
             f"invalid order id: {self.invalid_order_id}; "
-            f"invalid start date: {self.invalid_start_date}"
+            f"outside feed dates: {self.outside_feed_dates}; "
         )
 
 
@@ -97,7 +99,7 @@ class TripDelay(Fact):
         )
 
 
-def fetch_delays(apikey: str, trains: lookup.Trains) -> FactContainer[TripDelay]:
+def fetch_delays(apikey: str, schedules: Schedules) -> FactContainer[TripDelay]:
     container = FactContainer[TripDelay](timestamp=datetime.min, facts=[])
     page_size = PAGE_SIZE
     stats = Stats()
@@ -117,7 +119,7 @@ def fetch_delays(apikey: str, trains: lookup.Trains) -> FactContainer[TripDelay]
 
             # Parse the facts
             container.facts.extend(
-                f for i in data["tr"] for f in parse_train_delay(i, trains, stats).values()
+                f for i in data["tr"] for f in parse_train_delay(i, schedules, stats).values()
             )
 
             # Stop requesting data if there is no next page
@@ -129,29 +131,31 @@ def fetch_delays(apikey: str, trains: lookup.Trains) -> FactContainer[TripDelay]
         raise ValueError(f"couldn't retrieve all delays in {MAX_PAGES} requests")
 
 
-def parse_train_delay(d: json.Object, l: lookup.Trains, stats: Stats) -> dict[str, TripDelay]:
+def parse_train_delay(d: json.Object, s: Schedules, stats: Stats) -> dict[str, TripDelay]:
     stats.total += 1
 
-    key = lookup.TrainKey(d["sid"], d["oid"])
-    trips_by_date = l.get(key)
-    if not trips_by_date:
-        stats.invalid_order_id += 1
-        # logger.warning("Unknown %r", key)
+    key = OrderKey(
+        schedule_id=d["sid"],
+        order_id=d["oid"],
+        operating_date=Date.from_ymd_str(d["od"][:10]),
+    )
+
+    if key.operating_date not in s.valid_operating_dates:
+        stats.outside_feed_dates += 1
         return {}
 
-    by_trip = dict[str, TripDelay]()
-    plk_start_date = date.fromordinal(date.fromisoformat(d["od"][:10]).toordinal())
-    trips = trips_by_date.get(plk_start_date)
+    trips = s.by_order.get(key)
     if not trips:
-        stats.invalid_start_date += 1
-        # logger.warning("%r doesn't run on %s", key, plk_start_date.isoformat())
+        stats.invalid_order_id += 1
+        logger.warning("%r does not exist in static data", key)
         return {}
 
+    delays_by_trip = dict[str, TripDelay]()
     stats.matched += 1
 
     for stop_obj in d["st"]:
         order = cast(int, stop_obj["psn"])
-        stop_time = trips.by_order.get(order)
+        stop_time = trips.by_order_number.get(order)
         if stop_time is None:
             logger.warning("%r refers to unknown stop order %d", key, order)
             continue
@@ -166,18 +170,18 @@ def parse_train_delay(d: json.Object, l: lookup.Trains, stats: Stats) -> dict[st
                 stop_time.stop_id,
             )
 
-        if trip_delay := by_trip.get(stop_time.trip_id):
+        if trip_delay := delays_by_trip.get(stop_time.trip.trip_id):
             trip_delay.stops.append(stop_delay)
         else:
-            by_trip[stop_time.trip_id] = TripDelay(
-                trip=TripDate(stop_time.trip_id, trips.gtfs_start_date),
+            delays_by_trip[stop_time.trip.trip_id] = TripDelay(
+                trip=stop_time.trip,
                 stops=[stop_delay],
             )
 
-    return by_trip
+    return delays_by_trip
 
 
-def parse_stop_delay(s: json.Object, stop_time: lookup.StopTime) -> StopDelay:
+def parse_stop_delay(s: json.Object, stop_time: StopTime) -> StopDelay:
     return StopDelay(
         stop_id=str(s["id"]),
         stop_sequence=stop_time.stop_sequence,
