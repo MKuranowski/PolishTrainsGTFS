@@ -148,6 +148,13 @@ class PolishTrainsGTFS(App):
                 ),
                 AddTrainNames(),
                 GenerateTripHeadsign(),
+                ExecuteSQL(
+                    statement=(
+                        "UPDATE stop_times SET platform = 'BUS' "
+                        "WHERE platform = '' AND extra_fields_json ->> 'plk_category_code' = 'BUS'"
+                    ),
+                    task_name="FixMissingBusPlatforms",
+                ),
                 SplitBusLegs(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],

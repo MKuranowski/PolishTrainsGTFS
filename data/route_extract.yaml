@@ -27,6 +27,9 @@ KD:
     - route_code: "D93"
       select:
         - passes_through: [56713]  # Paczków
+    - route_code: "D92"
+      select:
+        - passes_through: [57612]  # Lądek-Zdrój
     - route_code: "D91"
       select:
         - passes_through: [53553]  # Jawor
@@ -93,8 +96,12 @@ KD:
         - passes_through: [58412]  # Kobierzyce
         - passes_through: [58487]  # Sobótka
 
+    - route_code: "D31"
+      select:
+        - passes_through: [44552]  # Góra Śląska
     - route_code: "D30"
       select:
+        - passes_through: [44511]  # Bojanowo
         - passes_through: [42606]  # Leszno
 
     - route_code: "D23"
