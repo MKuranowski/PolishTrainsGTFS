@@ -13,6 +13,7 @@ from . import external
 from .add_train_names import AddTrainNames
 from .curate_routes import CurateRoutes
 from .extract_routes import ExtractRoutes
+from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
 from .load_stops import LoadStops
 from .shift_negative_times import ShiftNegativeTimes
@@ -54,7 +55,14 @@ GTFS_HEADERS = {
         "route_color",
         "route_text_color",
     ),
-    "stops.txt": ("stop_id", "stop_name", "stop_lat", "stop_lon"),
+    "stops.txt": (
+        "stop_id",
+        "stop_name",
+        "stop_lat",
+        "stop_lon",
+        "location_type",
+        "parent_station",
+    ),
     "stop_times.txt": (
         "trip_id",
         "stop_sequence",
@@ -156,6 +164,7 @@ class PolishTrainsGTFS(App):
                     task_name="FixMissingBusPlatforms",
                 ),
                 SplitBusLegs(),
+                LoadBusStops(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
