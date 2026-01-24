@@ -131,8 +131,9 @@ class LoadSchedules(Task):
     def process_route(self, db: DBConnection, r: json.Object) -> None:
         agency_id = self.get_agency_id(db, r["cc"])
         calendar_id = self.calendars.upsert(db, (Date.from_ymd_str(i[:10]) for i in r["od"]))
+        schedule_id = str(r["sid"])
         order_id = str(r["oid"])
-        trip_id = self.get_trip_id(agency_id, order_id)
+        trip_id = self.get_trip_id(agency_id, schedule_id, order_id)
 
         route_code = self.resolve_route_code(r)
         route_id = self.get_route_id(db, agency_id, route_code)
@@ -289,8 +290,8 @@ class LoadSchedules(Task):
         else:
             return route["ccs"]
 
-    def get_trip_id(self, agency_id: str, order_id: str) -> str:
-        base = f"PLK_{agency_id}_{order_id}"
+    def get_trip_id(self, agency_id: str, schedule_id: str, order_id: str) -> str:
+        base = "_".join(("PLK", agency_id, schedule_id, order_id))
         id = find_non_conflicting_id(self.used_trip_ids, base, "_")
         if id != base:
             self.logger.warning("Non-unique trip_id: %s", base)
