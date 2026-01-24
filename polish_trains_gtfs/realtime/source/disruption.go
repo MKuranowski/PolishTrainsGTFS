@@ -26,7 +26,7 @@ type Disruption struct {
 
 type AffectedTrain struct {
 	TrainID
-	StationID int `json:"sid"`
+	StationID int `json:"stid"`
 	Sequence  int `json:"seq"`
 }
 
