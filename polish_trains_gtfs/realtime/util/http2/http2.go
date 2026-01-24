@@ -46,6 +46,6 @@ func GetJSON[T any](client *http.Client, req *http.Request) (content *T, err err
 	defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
-	err = dec.Decode(content)
+	err = dec.Decode(&content)
 	return
 }
