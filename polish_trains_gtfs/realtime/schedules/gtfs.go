@@ -167,7 +167,7 @@ func LoadGTFSFeedDates(feedInfo io.Reader) (d FeedDates, err error) {
 	// starting on the previous day. They are included in the GTFS.
 	d.Start = d.Start.Previous()
 
-	err = d.Start.UnmarshalText([]byte(row["feed_end_date"]))
+	err = d.End.UnmarshalText([]byte(row["feed_end_date"]))
 	if err != nil {
 		return FeedDates{}, ErrGTFSInvalidValue{"feed_info.txt", "feed_end_date", 2, err}
 	}
