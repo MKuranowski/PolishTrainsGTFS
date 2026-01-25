@@ -61,15 +61,15 @@ class AddTrainNames(Task):
         ]
         with r.db.transaction():
             r.db.raw_execute_many(
-                "UPDATE trips SET short_name = concat(short_name, ' ', ?) WHERE trip_id = ?",
+                "UPDATE trips SET short_name = short_name || ' ' || ? WHERE trip_id = ?",
                 to_update,
             )
 
     def get_all_trains_with_names(self, db: DBConnection) -> Iterable[TrainWithName]:
         q = db.raw_execute(
-            "SELECT trip_id, agency_id, trips.extra_fields_json ->> 'plk_train_name' "
+            "SELECT trip_id, agency_id, json_extract(trips.extra_fields_json, '$.plk_train_name') "
             "FROM trips LEFT JOIN routes USING (route_id) "
-            "WHERE trips.extra_fields_json ->> 'plk_train_name' != ''",
+            "WHERE COALESCE(json_extract(trips.extra_fields_json, '$.plk_train_name'), '') != ''",
         )
         for row in q:
             yield TrainWithName(
