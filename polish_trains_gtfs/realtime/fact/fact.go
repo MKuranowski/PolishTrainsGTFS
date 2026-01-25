@@ -105,6 +105,10 @@ func (c *Container) DumpGTFSFile(path string, humanReadable bool) error {
 	return b.Flush()
 }
 
+func (c *Container) TotalFacts() int {
+	return len(c.Alerts) + len(c.TripUpdates)
+}
+
 type Alert struct {
 	ID      string         `json:"id"`
 	Title   string         `json:"title"`
