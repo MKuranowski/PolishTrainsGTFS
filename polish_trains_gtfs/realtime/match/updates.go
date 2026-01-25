@@ -6,6 +6,7 @@ package match
 import (
 	"cmp"
 	"fmt"
+	"iter"
 	"slices"
 	"strconv"
 	"time"
@@ -121,18 +122,29 @@ func isEntireTripCancelled(real *source.OperationTrain) bool {
 }
 
 func isOnDetour(real *source.OperationTrain, trip *schedules.Trip, canonicalStops map[string]string) bool {
-	return slices.Equal(getAllRealStopIDs(real.Stops, canonicalStops), trip.GetStopIDs())
-}
-
-func getAllRealStopIDs(stops []*source.OperationTrainStop, canonicalStops map[string]string) []string {
-	stopIDs := make([]string, 0, len(stops))
-	for _, stop := range stops {
-		stopID := canonicalStops[strconv.Itoa(stop.StopID)]
-		if stopID != "" {
-			stopIDs = append(stopIDs, stopID)
+	// Train is on detour if one of its real stops is not on the trip.
+	// We permit opposite (scheduled stop not in real), as that indicates lack of realtime data.
+	scheduledStops := trip.GetStopIDs()
+	for stopID := range getAllRealStopIDs(real.Stops, canonicalStops) {
+		if _, isScheduled := scheduledStops[stopID]; !isScheduled {
+			return true
 		}
 	}
-	return stopIDs
+	return false
+}
+
+func getAllRealStopIDs(stops []*source.OperationTrainStop, canonicalStops map[string]string) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for _, stop := range stops {
+			stopID := canonicalStops[strconv.Itoa(stop.StopID)]
+			if stopID == "" {
+				continue
+			}
+			if !yield(stopID) {
+				return
+			}
+		}
+	}
 }
 
 func getDetourStopTimeUpdates(stops []*source.OperationTrainStop, canonicalStops map[string]string) []*fact.StopTimeUpdate {

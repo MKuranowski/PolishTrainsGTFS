@@ -39,10 +39,10 @@ func (t Trip) GetTripIDs() (ids []string) {
 	return
 }
 
-func (t Trip) GetStopIDs() (ids []string) {
-	ids = make([]string, len(t.StopTimes))
-	for i, st := range t.StopTimes {
-		ids[i] = st.StopID
+func (t Trip) GetStopIDs() (ids map[string]struct{}) {
+	ids = make(map[string]struct{}, len(t.StopTimes))
+	for _, st := range t.StopTimes {
+		ids[st.StopID] = struct{}{}
 	}
 	return
 }
