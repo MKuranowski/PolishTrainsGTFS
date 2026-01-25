@@ -188,13 +188,18 @@ func (s *StopTimeUpdate) AsGTFS() *gtfs.TripUpdate_StopTimeUpdate {
 			uncertainty = 0
 		}
 
-		g.Arrival = &gtfs.TripUpdate_StopTimeEvent{
-			Time:        ptr(s.Arrival.Unix()),
-			Uncertainty: ptr(uncertainty),
+		if !s.Arrival.IsZero() {
+			g.Arrival = &gtfs.TripUpdate_StopTimeEvent{
+				Time:        ptr(s.Arrival.Unix()),
+				Uncertainty: ptr(uncertainty),
+			}
 		}
-		g.Departure = &gtfs.TripUpdate_StopTimeEvent{
-			Time:        ptr(s.Departure.Unix()),
-			Uncertainty: ptr(uncertainty),
+
+		if !s.Departure.IsZero() {
+			g.Departure = &gtfs.TripUpdate_StopTimeEvent{
+				Time:        ptr(s.Departure.Unix()),
+				Uncertainty: ptr(uncertainty),
+			}
 		}
 	}
 
