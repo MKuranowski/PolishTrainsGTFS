@@ -96,9 +96,10 @@ func FetchOperationsPage(ctx context.Context, apikey string, client *http.Client
 	}
 	req.Header.Set("X-Api-Key", apikey)
 	req.URL.RawQuery = url.Values{
-		"page":       {strconv.Itoa(page)},
-		"pageSize":   {strconv.Itoa(pageSize)},
-		"fullRoutes": {"true"},
+		"page":            {strconv.Itoa(page)},
+		"pageSize":        {strconv.Itoa(pageSize)},
+		"fullRoutes":      {"true"},
+		"carriersExclude": {"WKD"},
 	}.Encode()
 
 	return http2.GetJSON[Operations](client, req)
