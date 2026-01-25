@@ -17,11 +17,17 @@ import (
 )
 
 var (
-	flagAlerts = flag.Bool("alerts", false, "parse disruptions instead of operations")
+	flagAlerts  = flag.Bool("alerts", false, "parse disruptions instead of operations")
+	flagGTFS    = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedules feed")
+	flagVerbose = flag.Bool("verbose", false, "show DEBUG logging")
 )
 
 func main() {
 	flag.Parse()
+
+	if *flagVerbose {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 
 	apikey, err := secret.FromEnvironment("PKP_PLK_APIKEY")
 	if err != nil {
@@ -29,7 +35,7 @@ func main() {
 	}
 
 	slog.Info("Loading static schedules")
-	static, err := schedules.LoadGTFSFromPath("polish_trains.zip")
+	static, err := schedules.LoadGTFSFromPath(*flagGTFS)
 	if err != nil {
 		log.Fatal(err)
 	}
