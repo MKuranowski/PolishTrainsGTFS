@@ -7,6 +7,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"log/slog"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/fact"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/match"
@@ -27,7 +28,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Print("Loading static schedules")
+	slog.Info("Loading static schedules")
 	static, err := schedules.LoadGTFSFromPath("polish_trains.zip")
 	if err != nil {
 		log.Fatal(err)
@@ -36,36 +37,36 @@ func main() {
 	var facts *fact.Container
 	var stats match.Stats
 	if *flagAlerts {
-		log.Print("Fetching disruptions")
+		slog.Info("Fetching disruptions")
 		real, err := source.FetchDisruptions(context.Background(), apikey, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Print("Fetched ", len(real.Disruptions), " disruption items")
+		slog.Info("Fetched disruptions ", "items", len(real.Disruptions))
 
-		log.Print("Parsing alerts")
+		slog.Info("Parsing alerts")
 		facts = match.Alerts(real, static, &stats)
-		log.Print("Got ", len(facts.Alerts), " alerts, ", stats)
+		slog.Info("Parsed alerts", "facts", len(facts.Alerts), "stats", stats)
 	} else {
-		log.Print("Fetching operations")
+		slog.Info("Fetching operations")
 		real, err := source.FetchOperations(context.Background(), apikey, nil, source.NewPageFetchOptions())
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Print("Fetched ", len(real.Trains), " operation items")
+		slog.Info("Fetched operations", "items", len(real.Trains))
 
-		log.Print("Parsing trip updates")
+		slog.Info("Parsing trip updates")
 		facts = match.TripUpdates(real, static, &stats)
-		log.Print("Got ", len(facts.TripUpdates), " trip updates, ", stats)
+		slog.Info("Parsed trip updates", "facts", len(facts.TripUpdates), "stats", stats)
 	}
 
-	log.Print("Dumping GTFS-Realtime")
+	slog.Info("Dumping GTFS-Realtime")
 	err = facts.DumpGTFSFile("polish_trains.pb", fact.HumanReadable)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Print("Dumping JSON")
+	slog.Info("Dumping JSON")
 	err = facts.DumpJSONFile("polish_trains.json", fact.HumanReadable)
 	if err != nil {
 		log.Fatal(err)

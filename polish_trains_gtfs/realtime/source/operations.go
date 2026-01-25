@@ -6,6 +6,7 @@ package source
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -63,6 +64,7 @@ func FetchOperations(ctx context.Context, apikey string, client *http.Client, op
 
 	for page := 1; page <= options.MaxPages; page++ {
 		waitFor(ctx, nextFetch)
+		slog.Debug("Fetching operations", "page", page)
 		o, err := FetchOperationsPage(ctx, apikey, client, page, options.PageSize)
 		if err != nil {
 			return nil, err
