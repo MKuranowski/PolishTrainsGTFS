@@ -6,6 +6,7 @@ package schedules
 import (
 	"slices"
 
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/set"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/time2"
 )
 
@@ -39,10 +40,10 @@ func (t Trip) GetTripIDs() (ids []string) {
 	return
 }
 
-func (t Trip) GetStopIDs() (ids map[string]struct{}) {
-	ids = make(map[string]struct{}, len(t.StopTimes))
+func (t Trip) GetStopIDs() (ids set.Set[string]) {
+	ids = make(set.Set[string], len(t.StopTimes))
 	for _, st := range t.StopTimes {
-		ids[st.StopID] = struct{}{}
+		ids.Add(st.StopID)
 	}
 	return
 }

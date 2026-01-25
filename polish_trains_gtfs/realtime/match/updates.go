@@ -125,8 +125,15 @@ func isOnDetour(real *source.OperationTrain, trip *schedules.Trip, canonicalStop
 	// Train is on detour if one of its real stops is not on the trip.
 	// We permit opposite (scheduled stop not in real), as that indicates lack of realtime data.
 	scheduledStops := trip.GetStopIDs()
+
+	/// HOTFIX: Bohumin - Zebrzydowice trains will sometimes report their first real stop
+	// as Petrovice u Karvine, even if they don't stop there. Don't consider that a detour.
+	if scheduledStops.Has("179223") && scheduledStops.Has("75507") {
+		scheduledStops.Add("179221")
+	}
+
 	for stopID := range getAllRealStopIDs(real.Stops, canonicalStops) {
-		if _, isScheduled := scheduledStops[stopID]; !isScheduled {
+		if !scheduledStops.Has(stopID) {
 			return true
 		}
 	}
