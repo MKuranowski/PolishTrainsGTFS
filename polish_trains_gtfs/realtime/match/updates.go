@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/fact"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/schedules"
@@ -98,8 +99,8 @@ func TripUpdate(real *source.OperationTrain, static *schedules.Package) []*fact.
 			update.Cancelled = true
 		} else {
 			update.Confirmed = realUpdate.Confirmed
-			update.Arrival = realUpdate.LiveArrival
-			update.Departure = realUpdate.LiveDeparture
+			update.Arrival = time.Time(realUpdate.LiveArrival)
+			update.Departure = time.Time(realUpdate.LiveDeparture)
 		}
 		updates[i].StopTimes = append(updates[i].StopTimes, update)
 	}
@@ -144,8 +145,8 @@ func getDetourStopTimeUpdates(stops []*source.OperationTrainStop, canonicalStops
 			updates = append(updates, &fact.StopTimeUpdate{
 				Sequence:  idx,
 				StopID:    stopID,
-				Arrival:   stop.LiveArrival,
-				Departure: stop.LiveDeparture,
+				Arrival:   time.Time(stop.LiveArrival),
+				Departure: time.Time(stop.LiveDeparture),
 				Confirmed: stop.Confirmed,
 			})
 			idx++
