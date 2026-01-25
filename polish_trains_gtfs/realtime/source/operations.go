@@ -69,11 +69,14 @@ func FetchOperations(ctx context.Context, apikey string, client *http.Client, op
 		}
 
 		if all == nil {
-			all = o
-			all.Pages = Pagination{
-				PageSize:     all.Pages.PageSize,
-				TotalPages:   all.Pages.TotalPages,
-				TotalEntries: all.Pages.TotalEntries,
+			all = &Operations{
+				Timestamp: o.Timestamp,
+				Pages: Pagination{
+					PageSize:     o.Pages.PageSize,
+					TotalPages:   o.Pages.TotalPages,
+					TotalEntries: o.Pages.TotalEntries,
+				},
+				Trains: o.Trains,
 			}
 		} else {
 			all.Trains = append(all.Trains, o.Trains...)
