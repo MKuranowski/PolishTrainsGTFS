@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/http2"
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/time2"
 )
 
 const DefaultPageSize = 5000
@@ -33,13 +34,13 @@ type OperationTrain struct {
 }
 
 type OperationTrainStop struct {
-	StopID          int       `json:"id"`
-	PlannedSequence int       `json:"psn"`
-	ActualSequence  int       `json:"asn"`
-	LiveArrival     time.Time `json:"aa"`
-	LiveDeparture   time.Time `json:"ad"`
-	Confirmed       bool      `json:"cf"`
-	Cancelled       bool      `json:"cn"`
+	StopID          int             `json:"id"`
+	PlannedSequence int             `json:"psn"`
+	ActualSequence  int             `json:"asn"`
+	LiveArrival     time2.LocalTime `json:"aa"`
+	LiveDeparture   time2.LocalTime `json:"ad"`
+	Confirmed       bool            `json:"cf"`
+	Cancelled       bool            `json:"cn"`
 }
 
 type PageFetchOptions struct {
