@@ -16,21 +16,31 @@ import (
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/source"
 )
 
-func TripUpdates(real *source.Operations, static *schedules.Package) *fact.Container {
+func TripUpdates(real *source.Operations, static *schedules.Package, stats *Stats) *fact.Container {
 	c := &fact.Container{
 		Timestamp:   real.Timestamp,
 		TripUpdates: make([]*fact.TripUpdate, 0, len(real.Trains)),
 	}
 	for _, t := range real.Trains {
-		if u := TripUpdate(t, static); u != nil {
+		if u := TripUpdate(t, static, stats); u != nil {
 			c.TripUpdates = append(c.TripUpdates, u...)
 		}
 	}
 	return c
 }
 
-func TripUpdate(real *source.OperationTrain, static *schedules.Package) []*fact.TripUpdate {
+func TripUpdate(real *source.OperationTrain, static *schedules.Package, stats *Stats) []*fact.TripUpdate {
 	trip := Trip(real.TrainID, static)
+	if stats != nil {
+		if trip != nil {
+			stats.Matched++
+		} else if !static.Dates.Contains(real.OperatingDate) {
+			stats.OutsideFeedDates++
+		} else {
+			stats.Unmatched++
+		}
+	}
+
 	if trip == nil {
 		return nil
 	}

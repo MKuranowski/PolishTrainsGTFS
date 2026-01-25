@@ -34,24 +34,29 @@ func main() {
 	}
 
 	var facts *fact.Container
+	var stats match.Stats
 	if *flagAlerts {
 		log.Print("Fetching disruptions")
 		real, err := source.FetchDisruptions(context.Background(), apikey, nil)
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Print("Fetched ", len(real.Disruptions), " disruption items")
 
 		log.Print("Parsing alerts")
-		facts = match.Alerts(real, static)
+		facts = match.Alerts(real, static, &stats)
+		log.Print("Got ", len(facts.Alerts), " alerts, ", stats)
 	} else {
 		log.Print("Fetching operations")
 		real, err := source.FetchOperations(context.Background(), apikey, nil, source.NewPageFetchOptions())
 		if err != nil {
 			log.Fatal(err)
 		}
+		log.Print("Fetched ", len(real.Trains), " operation items")
 
 		log.Print("Parsing trip updates")
-		facts = match.TripUpdates(real, static)
+		facts = match.TripUpdates(real, static, &stats)
+		log.Print("Got ", len(facts.TripUpdates), " trip updates, ", stats)
 	}
 
 	log.Print("Dumping GTFS-Realtime")
