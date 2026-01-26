@@ -20,10 +20,11 @@ import (
 )
 
 var (
-	flagAlerts  = flag.Bool("alerts", false, "parse disruptions instead of operations")
-	flagGTFS    = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedules feed")
-	flagPeriod  = flag.Duration("period", 1*time.Minute, "how often to fetch latest data")
-	flagVerbose = flag.Bool("verbose", false, "show DEBUG logging")
+	flagAlerts   = flag.Bool("alerts", false, "parse disruptions instead of operations")
+	flagGTFS     = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedules feed")
+	flagPeriod   = flag.Duration("period", 1*time.Minute, "how often to fetch latest data")
+	flagReadable = flag.Bool("readable", false, "dump output in human-readable format")
+	flagVerbose  = flag.Bool("verbose", false, "show DEBUG logging")
 )
 
 func main() {
@@ -105,13 +106,13 @@ func fetchUpdates(static *schedules.Package, apikey string) (*fact.Container, ma
 
 func writeOutput(facts *fact.Container) {
 	slog.Debug("Dumping GTFS-Realtime")
-	err := facts.DumpGTFSFile("polish_trains.pb", fact.HumanReadable)
+	err := facts.DumpGTFSFile("polish_trains.pb", *flagReadable)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	slog.Debug("Dumping JSON")
-	err = facts.DumpJSONFile("polish_trains.json", fact.HumanReadable)
+	err = facts.DumpJSONFile("polish_trains.json", *flagReadable)
 	if err != nil {
 		log.Fatal(err)
 	}
