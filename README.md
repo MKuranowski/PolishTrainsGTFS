@@ -42,7 +42,7 @@ Data Caveats
 Running
 -------
 
-PolishTrainsGTFS is written in Python with the [Impuls framework](https://github.com/MKuranowski/Impuls).
+The script creating GTFS Schedule is written in Python with the [Impuls framework](https://github.com/MKuranowski/Impuls).
 
 To set up the project, run:
 
@@ -63,13 +63,25 @@ The resulting schedules will be put in a file called `polish_trains.zip`.
 
 See `python -m polish_trains_gtfs.static --help` for a list of all available options.
 
-To create the GTFS-Realtime feed, run `python -m polish_trains_gtfs.realtime`.
+
+The script creating GTFS Realtime is written in Go. Simply run:
+
+```terminal
+$ export PKP_PLK_APIKEY=paste_your_apikey_here
+$ go run polish_trains_gtfs/realtime/cmd/main.go
+```
+
+This will compile and run the project, and then create `polish_trains.pb` and `polish_trains.json`
+files with trip updates. Run with `-help` to see all available options, which includes alerts and
+continuous loop mode.
+
+The realtime script requires the GTFS Schedule file, which is by default read from `polish_trains.zip`.
 
 
 API Keys
 --------
 
-In order to run this script, an apikey for [Otwarte Dane Kolejowe](https://pdp-api.plk-sa.pl/)
+In order to run the scripts, an apikey for [Otwarte Dane Kolejowe](https://pdp-api.plk-sa.pl/)
 is required. It must be provided in the `PKP_PLK_APIKEY` environment variable. For development,
 use your IDE .env file support to avoid having to `export` it in your shell.
 

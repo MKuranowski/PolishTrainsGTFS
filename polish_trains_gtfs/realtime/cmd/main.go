@@ -21,7 +21,7 @@ import (
 
 var (
 	flagAlerts   = flag.Bool("alerts", false, "parse disruptions instead of operations")
-	flagGTFS     = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedules feed")
+	flagGTFS     = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedule feed")
 	flagLoop     = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
 	flagReadable = flag.Bool("readable", false, "dump output in human-readable format")
 	flagVerbose  = flag.Bool("verbose", false, "show DEBUG logging")
