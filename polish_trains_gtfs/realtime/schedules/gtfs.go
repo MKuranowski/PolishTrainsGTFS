@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"regexp"
 	"slices"
@@ -76,6 +77,7 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 	p = new(Package)
 
 	// 1. Load feed_info.txt
+	slog.Debug("Loading GTFS feed_info.txt")
 	{
 		var f fs.File
 		f, err = gtfs.Open("feed_info.txt")
@@ -90,6 +92,7 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 	}
 
 	// 2. Load stops.txt
+	slog.Debug("Loading GTFS stops.txt")
 	{
 		var f fs.File
 		f, err = gtfs.Open("stops.txt")
@@ -104,6 +107,7 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 	}
 
 	// 3. Load calendar_dates.txt
+	slog.Debug("Loading GTFS calendar_dates.txt")
 	var services map[string][]DatePair
 	{
 		var f fs.File
@@ -119,6 +123,7 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 	}
 
 	// 4. Load trips.txt
+	slog.Debug("Loading GTFS trips.txt")
 	var tripIDs map[string][]TripID
 	{
 		var f fs.File
@@ -134,6 +139,7 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 	}
 
 	// 5. Load stop_times.txt
+	slog.Debug("Loading GTFS stop_times.txt")
 	{
 		var f fs.File
 		f, err = gtfs.Open("stop_times.txt")
@@ -146,6 +152,10 @@ func LoadGTFS(gtfs fs.FS) (p *Package, err error) {
 			return nil, err
 		}
 	}
+
+	// 6. Post-process the file
+	slog.Debug("Creating agency+number-based lookup table")
+	p.RebuidNumberIndex()
 
 	return
 }
@@ -307,8 +317,9 @@ func LoadGTFSTrips(trips io.Reader, services map[string][]DatePair) (map[string]
 
 			tripObjects[tripID] = &Trip{
 				GTFSStartDate: dp.GTFSDate,
+				PLKStartDate:  dp.PLKDate,
 				AgencyID:      agencyID,
-				Number:        extractTrainNumber(row),
+				Numbers:       extractTrainNumbers(row),
 			}
 		}
 	}
@@ -332,12 +343,29 @@ func parseTripID(gtfsID string) (agencyID string, scheduleID int, orderID int, e
 	return
 }
 
-func extractTrainNumber(tripsRow map[string]string) string {
+func extractTrainNumbers(tripsRow map[string]string) (numbers []string) {
+	// Extract numbers from trip_short_name
 	m := trainNumberRegex.FindString(tripsRow["trip_short_name"])
-	if m == "" {
-		return tripsRow["plk_train_number"]
+	if m != "" {
+		numbers = expandTrainNumber(m)
 	}
-	return m
+
+	// Extract numbers from plk_train_number, but only if they were not present in short_name
+	for _, n := range expandTrainNumber(tripsRow["plk_train_number"]) {
+		if !slices.Contains(numbers, n) {
+			numbers = append(numbers, n)
+		}
+	}
+
+	return numbers
+}
+
+func expandTrainNumber(s string) []string {
+	parts := strings.Split(s, "/")
+	if len(parts) == 2 && len(parts[1]) == 1 {
+		parts[1] = parts[0][0:len(parts)-1] + parts[1]
+	}
+	return parts
 }
 
 func LoadGTFSStopTimes(stopTimes io.Reader, tripIDs map[string][]TripID, tripObjects map[TripID]*Trip, canonicalStops map[string]string) error {

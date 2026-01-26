@@ -11,7 +11,9 @@ import (
 	"log/slog"
 	"path/filepath"
 	"strings"
+	"time"
 
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/alternative"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/backoff"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/fact"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/match"
@@ -22,15 +24,17 @@ import (
 )
 
 var (
-	flagAlerts   = flag.Bool("alerts", false, "parse disruptions instead of operations")
-	flagGTFS     = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedule feed")
-	flagLoop     = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
-	flagOutput   = flag.String("output", "polish_trains.pb", "path to output .pb file")
-	flagReadable = flag.Bool("readable", false, "dump output in human-readable format")
-	flagVerbose  = flag.Bool("verbose", false, "show DEBUG logging")
+	flagAlerts      = flag.Bool("alerts", false, "parse disruptions instead of operations")
+	flagAlternative = flag.Duration("alternative", 15*time.Minute, "when non-zero, fetch fresh schedules from API")
+	flagGTFS        = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedule feed")
+	flagLoop        = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
+	flagOutput      = flag.String("output", "polish_trains.pb", "path to output .pb file")
+	flagReadable    = flag.Bool("readable", false, "dump output in human-readable format")
+	flagVerbose     = flag.Bool("verbose", false, "show DEBUG logging")
 )
 
 var jsonOutput = ""
+var altLookupReloader alternative.LookupReloader = alternative.NopLookupReloader{}
 
 func main() {
 	flag.Parse()
@@ -48,6 +52,13 @@ func main() {
 	static, err := schedules.LoadGTFSFromPath(*flagGTFS)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *flagAlternative != 0 {
+		altLookupReloader = &alternative.TimeLimitedLookupReloader{
+			Wrapped: alternative.UnconditionalLookupReloader{},
+			Period:  *flagAlternative,
+		}
 	}
 
 	if *flagLoop == 0 {
@@ -76,6 +87,11 @@ func main() {
 }
 
 func run(static *schedules.Package, apikey string) (int, match.Stats, error) {
+	err := altLookupReloader.Reload(context.Background(), static, apikey, nil)
+	if err != nil {
+		return 0, match.Stats{}, err
+	}
+
 	facts, stats, err := fetch(static, apikey)
 	if err != nil {
 		return 0, stats, err

@@ -23,6 +23,11 @@ type Date struct {
 	M, D uint8
 }
 
+func Today() Date {
+	now := time.Now()
+	return Date{uint16(now.Year()), uint8(now.Month()), uint8(now.Day())}
+}
+
 func (d Date) IsValid() bool {
 	return d.M >= 1 && d.M <= 12 && d.D >= 1 && d.D <= DaysInMonth(d.Y, d.M)
 }

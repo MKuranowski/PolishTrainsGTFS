@@ -15,7 +15,19 @@ func Trip(real source.TrainID, static *schedules.Package) *schedules.Trip {
 		OrderID:      real.OrderID,
 		PLKStartDate: real.OperatingDate,
 	}
-	return static.Trips[id]
+
+	// Try to match on `id` directly
+	if t := static.Trips[id]; t != nil {
+		return t
+	}
+
+	// Try to match via the alternative lookup table
+	number := static.AlternativeTripLookup[id]
+	if number.AgencyID == "" {
+		return nil
+	}
+
+	return static.TripsByNumber[number]
 }
 
 func TripSelectors(real source.TrainID, static *schedules.Package) []fact.TripSelector {
