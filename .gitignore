@@ -2,6 +2,8 @@ _impuls_workspace/
 *.pyc
 .env
 .venv
+polish_trains_gtfs/realtime/cmd/main
+realtime
 polish_trains.zip
 polish_trains*.pb
 polish_trains*.json
