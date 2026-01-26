@@ -7,8 +7,10 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/time2"
@@ -90,19 +92,28 @@ func (c *Container) DumpGTFS(w io.Writer, humanReadable bool) error {
 }
 
 func (c *Container) DumpGTFSFile(path string, humanReadable bool) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
+	tempPath := getTempOutputPath(path)
 
-	b := bufio.NewWriter(f)
-	err = c.DumpGTFS(b, humanReadable)
-	if err != nil {
-		return err
+	{
+		f, err := os.Create(tempPath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		b := bufio.NewWriter(f)
+		err = c.DumpGTFS(b, humanReadable)
+		if err != nil {
+			return err
+		}
+
+		err = b.Flush()
+		if err != nil {
+			return err
+		}
 	}
 
-	return b.Flush()
+	return os.Rename(tempPath, path)
 }
 
 func (c *Container) TotalFacts() int {
@@ -235,4 +246,9 @@ func translatedString(s string) *gtfs.TranslatedString {
 			},
 		},
 	}
+}
+
+func getTempOutputPath(path string) string {
+	dir, name := filepath.Split(path)
+	return fmt.Sprintf("%s.%s.tmp", dir, name)
 }
