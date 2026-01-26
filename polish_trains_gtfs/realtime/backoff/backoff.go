@@ -28,12 +28,12 @@ func (b *Backoff) EndRun(success bool) time.Time {
 		b.Failures = 0
 		b.nextRun = b.lastRun.Add(b.Period)
 	} else {
-		b.Failures++
 		backoffExponent := b.Failures
+		b.Failures++
 		if b.MaxBackoffExponent > 0 && backoffExponent > b.MaxBackoffExponent {
 			backoffExponent = b.MaxBackoffExponent
 		}
-		sleep := time.Duration(pow(uint(b.Period), backoffExponent))
+		sleep := time.Duration(1<<backoffExponent) * b.Period
 		b.nextRun = b.lastRun.Add(sleep)
 	}
 	return b.nextRun
