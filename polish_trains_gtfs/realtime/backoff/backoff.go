@@ -29,7 +29,7 @@ func (b *Backoff) EndRun(success bool) time.Time {
 		b.nextRun = b.lastRun.Add(b.Period)
 	} else {
 		b.Failures++
-		backoffExponent := b.Failures - 1
+		backoffExponent := b.Failures
 		if b.MaxBackoffExponent > 0 && backoffExponent > b.MaxBackoffExponent {
 			backoffExponent = b.MaxBackoffExponent
 		}
