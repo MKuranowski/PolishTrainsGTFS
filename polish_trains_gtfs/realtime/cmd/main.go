@@ -6,9 +6,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"log/slog"
-	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/backoff"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/fact"
@@ -22,7 +22,7 @@ import (
 var (
 	flagAlerts   = flag.Bool("alerts", false, "parse disruptions instead of operations")
 	flagGTFS     = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedules feed")
-	flagPeriod   = flag.Duration("period", 1*time.Minute, "how often to fetch latest data")
+	flagLoop     = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
 	flagReadable = flag.Bool("readable", false, "dump output in human-readable format")
 	flagVerbose  = flag.Bool("verbose", false, "show DEBUG logging")
 )
@@ -44,23 +44,39 @@ func main() {
 		log.Fatal(err)
 	}
 
-	b := backoff.Backoff{Period: *flagPeriod, MaxBackoffExponent: 6}
-	for {
-		b.Wait()
-		b.StartRun()
-		facts, stats, err := fetch(static, apikey)
-
-		if httpErr, ok := err.(*http2.Error); ok && isTemporaryAPIFailure(httpErr) {
-			b.EndRun(backoff.Failure)
-			continue
-		} else if err != nil {
+	if *flagLoop == 0 {
+		totalFacts, stats, err := run(static, apikey)
+		if err != nil {
 			log.Fatal(err)
 		}
-		b.EndRun(backoff.Success)
-
-		writeOutput(facts)
-		slog.Info("Feed updated successfully", "facts", facts.TotalFacts(), "stats", stats)
+		slog.Info("Feed updated successfully", "facts", totalFacts, "stats", stats)
+	} else {
+		b := backoff.Backoff{Period: *flagLoop, MaxBackoffExponent: 6}
+		for {
+			b.Wait()
+			b.StartRun()
+			totalFacts, stats, err := run(static, apikey)
+			if err != nil && canBackoff(err) {
+				nextTry := b.EndRun(backoff.Failure)
+				slog.Error("Feed update failure", "error", err, "next_try", nextTry)
+			} else if err != nil {
+				log.Fatal(err)
+			} else {
+				b.EndRun(backoff.Success)
+				slog.Info("Feed updated successfully", "facts", totalFacts, "stats", stats)
+			}
+		}
 	}
+}
+
+func run(static *schedules.Package, apikey string) (int, match.Stats, error) {
+	facts, stats, err := fetch(static, apikey)
+	if err != nil {
+		return 0, stats, err
+	}
+
+	err = writeOutput(facts)
+	return facts.TotalFacts(), stats, err
 }
 
 func fetch(static *schedules.Package, apikey string) (*fact.Container, match.Stats, error) {
@@ -104,25 +120,29 @@ func fetchUpdates(static *schedules.Package, apikey string) (*fact.Container, ma
 	return facts, stats, nil
 }
 
-func writeOutput(facts *fact.Container) {
+func writeOutput(facts *fact.Container) error {
 	slog.Debug("Dumping GTFS-Realtime")
 	err := facts.DumpGTFSFile("polish_trains.pb", *flagReadable)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("polish_trains.pb: %w", err)
 	}
 
 	slog.Debug("Dumping JSON")
 	err = facts.DumpJSONFile("polish_trains.json", *flagReadable)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("polish_trains.json: %w", err)
 	}
+
+	return nil
 }
 
-func isTemporaryAPIFailure(err *http2.Error) bool {
-	switch err.StatusCode {
-	case 429, 500, 503:
-		return true
-	default:
-		return false
+func canBackoff(err error) bool {
+	// Only backoff on 429, 500 i 503 HTTP errors
+	if httpErr, ok := err.(*http2.Error); ok {
+		switch httpErr.StatusCode {
+		case 429, 500, 503:
+			return true
+		}
 	}
+	return false
 }
