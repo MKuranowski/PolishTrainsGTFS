@@ -58,7 +58,7 @@ func NewPageFetchOptions() PageFetchOptions {
 	}
 }
 
-func FetchOperations(ctx context.Context, apikey string, client *http.Client, options PageFetchOptions) (*Operations, error) {
+func FetchOperations(ctx context.Context, apikey string, client http2.Doer, options PageFetchOptions) (*Operations, error) {
 	var all *Operations
 	var nextFetch time.Time
 
@@ -91,7 +91,7 @@ func FetchOperations(ctx context.Context, apikey string, client *http.Client, op
 	return nil, ErrTooManyPages
 }
 
-func FetchOperationsPage(ctx context.Context, apikey string, client *http.Client, page, pageSize int) (o *Operations, err error) {
+func FetchOperationsPage(ctx context.Context, apikey string, client http2.Doer, page, pageSize int) (o *Operations, err error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://pdp-api.plk-sa.pl/api/v1/operations/shortened", nil)
 	if err != nil {
 		return

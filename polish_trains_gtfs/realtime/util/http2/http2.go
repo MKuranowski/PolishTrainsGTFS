@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+type Doer interface {
+	Do(*http.Request) (*http.Response, error)
+}
+
 type Error struct {
 	URL, Status string
 	StatusCode  int
@@ -32,7 +36,7 @@ func Check(r *http.Response) error {
 	return nil
 }
 
-func GetJSON[T any](client *http.Client, req *http.Request) (content *T, err error) {
+func GetJSON[T any](client Doer, req *http.Request) (content *T, err error) {
 	if client == nil {
 		client = http.DefaultClient
 	}

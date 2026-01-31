@@ -6,28 +6,28 @@ package alternative
 import (
 	"context"
 	"log/slog"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/schedules"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/source"
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/http2"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/time2"
 )
 
 type LookupReloader interface {
-	Reload(context.Context, *schedules.Package, string, *http.Client) error
+	Reload(context.Context, *schedules.Package, string, http2.Doer) error
 }
 
 type NopLookupReloader struct{}
 
-func (NopLookupReloader) Reload(context.Context, *schedules.Package, string, *http.Client) error {
+func (NopLookupReloader) Reload(context.Context, *schedules.Package, string, http2.Doer) error {
 	return nil
 }
 
 type UnconditionalLookupReloader struct{}
 
-func (UnconditionalLookupReloader) Reload(ctx context.Context, static *schedules.Package, apikey string, client *http.Client) error {
+func (UnconditionalLookupReloader) Reload(ctx context.Context, static *schedules.Package, apikey string, client http2.Doer) error {
 	slog.Info("Reloading alternative trip lookup table")
 
 	today := time2.Today()
@@ -77,7 +77,7 @@ type TimeLimitedLookupReloader struct {
 	lastRun time.Time
 }
 
-func (r *TimeLimitedLookupReloader) Reload(ctx context.Context, static *schedules.Package, apikey string, client *http.Client) error {
+func (r *TimeLimitedLookupReloader) Reload(ctx context.Context, static *schedules.Package, apikey string, client http2.Doer) error {
 	if time.Since(r.lastRun) < r.Period {
 		return nil
 	}

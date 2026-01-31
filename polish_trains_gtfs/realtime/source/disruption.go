@@ -30,7 +30,7 @@ type AffectedTrain struct {
 	Sequence  int `json:"seq"`
 }
 
-func FetchDisruptions(ctx context.Context, apikey string, client *http.Client) (d *Disruptions, err error) {
+func FetchDisruptions(ctx context.Context, apikey string, client http2.Doer) (d *Disruptions, err error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://pdp-api.plk-sa.pl/api/v1/disruptions/shortened", nil)
 	if err != nil {
 		return

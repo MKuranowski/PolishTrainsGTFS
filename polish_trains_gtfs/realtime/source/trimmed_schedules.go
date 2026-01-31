@@ -46,7 +46,7 @@ func (r *TrimmedRoute) GetNumber() string {
 	return r.InternationalArrNumber
 }
 
-func FetchTrimmedSchedules(ctx context.Context, apikey string, client *http.Client, startDate, endDate time2.Date) (*TrimmedSchedules, error) {
+func FetchTrimmedSchedules(ctx context.Context, apikey string, client http2.Doer, startDate, endDate time2.Date) (*TrimmedSchedules, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://pdp-api.plk-sa.pl/api/v1/schedules/shortened", nil)
 	if err != nil {
 		return nil, err
