@@ -45,25 +45,21 @@ type OperationTrainStop struct {
 }
 
 type PageFetchOptions struct {
-	PageSize     int
-	MaxPages     int
-	FetchSpacing time.Duration
+	PageSize int
+	MaxPages int
 }
 
 func NewPageFetchOptions() PageFetchOptions {
 	return PageFetchOptions{
-		PageSize:     DefaultPageSize,
-		MaxPages:     DefaultMaxPages,
-		FetchSpacing: DefaultFetchSpacing,
+		PageSize: DefaultPageSize,
+		MaxPages: DefaultMaxPages,
 	}
 }
 
 func FetchOperations(ctx context.Context, apikey string, client http2.Doer, options PageFetchOptions) (*Operations, error) {
 	var all *Operations
-	var nextFetch time.Time
 
 	for page := 1; page <= options.MaxPages; page++ {
-		waitFor(ctx, nextFetch)
 		slog.Debug("Fetching operations", "page", page)
 		o, err := FetchOperationsPage(ctx, apikey, client, page, options.PageSize)
 		if err != nil {
