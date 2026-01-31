@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -21,6 +23,7 @@ import (
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/source"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/http2"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/secret"
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/vpn"
 )
 
 var (
@@ -31,10 +34,12 @@ var (
 	flagOutput      = flag.String("output", "polish_trains.pb", "path to output .pb file")
 	flagReadable    = flag.Bool("readable", false, "dump output in human-readable format")
 	flagVerbose     = flag.Bool("verbose", false, "show DEBUG logging")
+	flagVpn         = flag.String("vpn", "", "when non-empty, route all traffic through VPN(s) set-up with a WireGuard config file or directory with such files")
 )
 
 var jsonOutput = ""
 var altLookupReloader alternative.LookupReloader = alternative.NopLookupReloader{}
+var client http2.Doer
 
 func main() {
 	flag.Parse()
@@ -54,6 +59,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	client = getHttpClient()
 	if *flagAlternative != 0 {
 		altLookupReloader = &alternative.TimeLimitedLookupReloader{
 			Wrapped: alternative.UnconditionalLookupReloader{},
@@ -92,7 +98,7 @@ func main() {
 }
 
 func run(static *schedules.Package, apikey string) (int, match.Stats, error) {
-	err := altLookupReloader.Reload(context.Background(), static, apikey, nil)
+	err := altLookupReloader.Reload(context.Background(), static, apikey, client)
 	if err != nil {
 		return 0, match.Stats{}, err
 	}
@@ -117,7 +123,7 @@ func fetchAlerts(static *schedules.Package, apikey string) (*fact.Container, mat
 	var stats match.Stats
 
 	slog.Debug("Fetching disruptions")
-	real, err := source.FetchDisruptions(context.Background(), apikey, nil)
+	real, err := source.FetchDisruptions(context.Background(), apikey, client)
 	if err != nil {
 		return nil, stats, err
 	}
@@ -134,7 +140,7 @@ func fetchUpdates(static *schedules.Package, apikey string) (*fact.Container, ma
 	var stats match.Stats
 
 	slog.Debug("Fetching operations")
-	real, err := source.FetchOperations(context.Background(), apikey, nil, source.NewPageFetchOptions())
+	real, err := source.FetchOperations(context.Background(), apikey, client, source.NewPageFetchOptions())
 	if err != nil {
 		return nil, stats, err
 	}
@@ -184,4 +190,67 @@ func initJsonOutput() {
 	}
 	name = strings.Join(parts, ".")
 	jsonOutput = dir + name
+}
+
+func getHttpClient() http2.Doer {
+	var base http2.Doer
+	if *flagVpn == "" {
+		base = http.DefaultClient
+	} else if !isDir(*flagVpn) {
+		config, err := vpn.LoadWireguardConfigFromFile(*flagVpn)
+		if err != nil {
+			log.Fatalf("%s: %s", *flagVpn, err)
+		}
+
+		base, err = vpn.NewWireguardClient(config)
+		if err != nil {
+			log.Fatalf("%s: %s", *flagVpn, err)
+		}
+	} else {
+		files, err := os.ReadDir(*flagVpn)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		vpns := make([]http2.Doer, 0, len(files))
+		for _, file := range files {
+			name := filepath.Join(*flagVpn, file.Name())
+			if file.IsDir() || filepath.Ext(name) != ".conf" {
+				continue
+			}
+
+			config, err := vpn.LoadWireguardConfigFromFile(name)
+			if err != nil {
+				log.Fatalf("%s: %s", name, err)
+			}
+
+			base, err = vpn.NewWireguardClient(config)
+			if err != nil {
+				log.Fatalf("%s: %s", name, err)
+			}
+
+			vpns = append(vpns, base)
+		}
+
+		if len(vpns) == 0 {
+			log.Fatalf("%s: no WireGuard .conf files", *flagVpn)
+		}
+		base = http2.RandomDoer(vpns)
+	}
+
+	var rateLimit time.Duration
+	if *flagLoop == 0 {
+		rateLimit = 100 * time.Millisecond
+	} else {
+		rateLimit = time.Second
+	}
+	return http2.NewRateLimitedDoer(base, rateLimit)
+}
+
+func isDir(path string) bool {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return stat.IsDir()
 }
