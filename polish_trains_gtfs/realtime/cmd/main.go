@@ -21,6 +21,7 @@ import (
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/match"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/schedules"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/source"
+	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/client"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/http2"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/secret"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/vpn"
@@ -39,7 +40,7 @@ var (
 
 var jsonOutput = ""
 var altLookupReloader alternative.LookupReloader = alternative.NopLookupReloader{}
-var client http2.Doer
+var clientPool *client.Pool
 
 func main() {
 	flag.Parse()
@@ -52,6 +53,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	initClientPool(apikey)
+	defer clientPool.Close()
 
 	slog.Info("Loading static schedules")
 	static, err := schedules.LoadGTFSFromPath(*flagGTFS)
@@ -59,7 +62,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	client = getHttpClient()
 	if *flagAlternative != 0 {
 		altLookupReloader = &alternative.TimeLimitedLookupReloader{
 			Wrapped: alternative.UnconditionalLookupReloader{},
@@ -68,7 +70,7 @@ func main() {
 	}
 
 	if *flagLoop == 0 {
-		totalFacts, stats, err := run(static, apikey)
+		totalFacts, stats, err := run(static)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -83,8 +85,9 @@ func main() {
 		for {
 			b.Wait()
 			b.StartRun()
-			totalFacts, stats, err := run(static, apikey)
+			totalFacts, stats, err := run(static)
 			if err != nil && canBackoff(err) {
+				clientPool.BackoffLast()
 				nextTry := b.EndRun(backoff.Failure)
 				slog.Error("Feed update failure", "error", err, "next_try", nextTry)
 			} else if err != nil {
@@ -97,13 +100,15 @@ func main() {
 	}
 }
 
-func run(static *schedules.Package, apikey string) (int, match.Stats, error) {
-	err := altLookupReloader.Reload(context.Background(), static, apikey, client)
+func run(static *schedules.Package) (int, match.Stats, error) {
+	client := clientPool.Select()
+
+	err := altLookupReloader.Reload(context.Background(), static, client.Key, client)
 	if err != nil {
 		return 0, match.Stats{}, err
 	}
 
-	facts, stats, err := fetch(static, apikey)
+	facts, stats, err := fetch(static, client)
 	if err != nil {
 		return 0, stats, err
 	}
@@ -112,18 +117,18 @@ func run(static *schedules.Package, apikey string) (int, match.Stats, error) {
 	return facts.TotalFacts(), stats, err
 }
 
-func fetch(static *schedules.Package, apikey string) (*fact.Container, match.Stats, error) {
+func fetch(static *schedules.Package, client *client.Client) (*fact.Container, match.Stats, error) {
 	if *flagAlerts {
-		return fetchAlerts(static, apikey)
+		return fetchAlerts(static, client)
 	}
-	return fetchUpdates(static, apikey)
+	return fetchUpdates(static, client)
 }
 
-func fetchAlerts(static *schedules.Package, apikey string) (*fact.Container, match.Stats, error) {
+func fetchAlerts(static *schedules.Package, client *client.Client) (*fact.Container, match.Stats, error) {
 	var stats match.Stats
 
 	slog.Debug("Fetching disruptions")
-	real, err := source.FetchDisruptions(context.Background(), apikey, client)
+	real, err := source.FetchDisruptions(context.Background(), client.Key, client)
 	if err != nil {
 		return nil, stats, err
 	}
@@ -136,11 +141,11 @@ func fetchAlerts(static *schedules.Package, apikey string) (*fact.Container, mat
 	return facts, stats, nil
 }
 
-func fetchUpdates(static *schedules.Package, apikey string) (*fact.Container, match.Stats, error) {
+func fetchUpdates(static *schedules.Package, client *client.Client) (*fact.Container, match.Stats, error) {
 	var stats match.Stats
 
 	slog.Debug("Fetching operations")
-	real, err := source.FetchOperations(context.Background(), apikey, client, source.NewPageFetchOptions())
+	real, err := source.FetchOperations(context.Background(), client.Key, client, source.NewPageFetchOptions())
 	if err != nil {
 		return nil, stats, err
 	}
@@ -192,27 +197,42 @@ func initJsonOutput() {
 	jsonOutput = dir + name
 }
 
-func getHttpClient() http2.Doer {
-	var base http2.Doer
+func initClientPool(apikey string) {
+	var clients []*client.Client
+	rateLimit := 100 * time.Millisecond
+	if *flagLoop != 0 {
+		rateLimit = 1 * time.Second
+	}
+
 	if *flagVpn == "" {
-		base = http.DefaultClient
+		clients = append(clients, &client.Client{
+			Key:       apikey,
+			Doer:      http.DefaultClient,
+			RateLimit: rateLimit,
+		})
 	} else if !isDir(*flagVpn) {
 		config, err := vpn.LoadWireguardConfigFromFile(*flagVpn)
 		if err != nil {
 			log.Fatalf("%s: %s", *flagVpn, err)
 		}
 
-		base, err = vpn.NewWireguardClient(config)
+		c, closer, err := vpn.NewWireguardClient(config)
 		if err != nil {
 			log.Fatalf("%s: %s", *flagVpn, err)
 		}
+
+		clients = append(clients, &client.Client{
+			Key:       apikey,
+			Doer:      c,
+			Closer:    closer,
+			RateLimit: rateLimit,
+		})
 	} else {
 		files, err := os.ReadDir(*flagVpn)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		vpns := make([]http2.Doer, 0, len(files))
 		for _, file := range files {
 			name := filepath.Join(*flagVpn, file.Name())
 			if file.IsDir() || filepath.Ext(name) != ".conf" {
@@ -224,27 +244,25 @@ func getHttpClient() http2.Doer {
 				log.Fatalf("%s: %s", name, err)
 			}
 
-			base, err = vpn.NewWireguardClient(config)
+			c, closer, err := vpn.NewWireguardClient(config)
 			if err != nil {
-				log.Fatalf("%s: %s", name, err)
+				log.Fatalf("%s: %s", *flagVpn, err)
 			}
 
-			vpns = append(vpns, base)
+			clients = append(clients, &client.Client{
+				Key:       apikey,
+				Doer:      c,
+				Closer:    closer,
+				RateLimit: rateLimit,
+			})
 		}
 
-		if len(vpns) == 0 {
+		if len(clients) == 0 {
 			log.Fatalf("%s: no WireGuard .conf files", *flagVpn)
 		}
-		base = http2.RandomDoer(vpns)
 	}
 
-	var rateLimit time.Duration
-	if *flagLoop == 0 {
-		rateLimit = 100 * time.Millisecond
-	} else {
-		rateLimit = time.Second
-	}
-	return http2.NewRateLimitedDoer(base, rateLimit)
+	clientPool = client.NewPool(clients...)
 }
 
 func isDir(path string) bool {

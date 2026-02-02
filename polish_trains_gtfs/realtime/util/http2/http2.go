@@ -7,46 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand/v2"
 	"net/http"
-	"time"
 )
 
 // Doer abstracts any object which can "Do" a [http.Request], such as a [http.Client].
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
-}
-
-// RateLimitedDoer limits another [Doer] to only run requests at most once every Period.
-type RateLimitedDoer struct {
-	Parent  Doer
-	Period  time.Duration
-	NextRun time.Time
-}
-
-func NewRateLimitedDoer(parent Doer, period time.Duration) *RateLimitedDoer {
-	if parent == nil {
-		parent = http.DefaultClient
-	}
-	return &RateLimitedDoer{Parent: parent, Period: period}
-}
-
-func (d *RateLimitedDoer) Do(req *http.Request) (*http.Response, error) {
-	sleepDuration := time.Until(d.NextRun)
-	if sleepDuration > 0 {
-		time.Sleep(sleepDuration)
-	}
-
-	d.NextRun = time.Now().Add(d.Period)
-	return d.Parent.Do(req)
-}
-
-// RandomDoer runs a request by pseud-randomly choosing another [Doer].
-type RandomDoer []Doer
-
-func (d RandomDoer) Do(req *http.Request) (*http.Response, error) {
-	idx := rand.IntN(len(d))
-	return d[idx].Do(req)
 }
 
 type Error struct {

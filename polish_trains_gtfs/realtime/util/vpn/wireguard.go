@@ -10,7 +10,6 @@ import (
 	"net"
 	"net/http"
 	"net/netip"
-	"runtime"
 	"strings"
 
 	"golang.zx2c4.com/wireguard/conn"
@@ -106,24 +105,24 @@ func stripCIDR(x string) string {
 	return x
 }
 
-func NewWireguardClient(config *WireguardConfig) (*http.Client, error) {
+func NewWireguardClient(config *WireguardConfig) (c *http.Client, closer func(), err error) {
 	tun, tnet, err := netstack.CreateNetTUN([]netip.Addr{config.Address}, []netip.Addr{config.DNS}, 1420)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dev := device.NewDevice(tun, conn.NewDefaultBind(), device.NewLogger(device.LogLevelError, ""))
 	err = dev.IpcSet(config.AsUAPIString())
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = dev.Up()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	c := &http.Client{Transport: &http.Transport{DialContext: tnet.DialContext}}
-	runtime.AddCleanup(c, func(dev *device.Device) { dev.Close() }, dev)
-	return c, nil
+	c = &http.Client{Transport: &http.Transport{DialContext: tnet.DialContext}}
+	closer = func() { dev.Close() }
+	return c, closer, nil
 }
