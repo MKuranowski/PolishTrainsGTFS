@@ -28,7 +28,7 @@ import (
 
 var (
 	flagAlerts      = flag.Bool("alerts", false, "parse disruptions instead of operations")
-	flagAlternative = flag.Duration("alternative", 15*time.Minute, "when non-zero, fetch fresh schedules from API")
+	flagAlternative = flag.Duration("alternative", 20*time.Minute, "when non-zero, fetch fresh schedules from API")
 	flagGTFS        = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedule feed")
 	flagLoop        = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
 	flagOutput      = flag.String("output", "polish_trains.pb", "path to output .pb file")
