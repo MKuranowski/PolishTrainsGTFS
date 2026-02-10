@@ -113,6 +113,18 @@ class NameSelector(Selector):
         return None
 
 
+class NumberSelector(Selector):
+    def __init__(self, number: str, route_code: str) -> None:
+        super().__init__(route_code)
+        self.number = number
+
+    def requires_stops(self) -> bool:
+        return False
+
+    def matches(self, t: Trip, stops: Iterable[str]) -> str | None:
+        return self.route_code if t.short_name == self.number else None
+
+
 class PassesThroughSelector(Selector):
     def __init__(self, required_stops: set[str], route_code: str) -> None:
         super().__init__(route_code)
@@ -138,6 +150,10 @@ def create_selector_from_config(code: str, cfg: SelectorConfig) -> Selector:
     if name_pattern := cfg.get("name"):
         unused_keys.discard("name")
         s = s.and_(NameSelector(name_pattern, code))
+
+    if number := cfg.get("number"):
+        unused_keys.discard("number")
+        s = s.and_(NumberSelector(number, code))
 
     if required_stops := cfg.get("passes_through"):
         unused_keys.discard("passes_through")
