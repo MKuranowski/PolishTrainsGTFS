@@ -4,6 +4,9 @@ KS:
       select:
         - {name: 'ZSSK'}
         - {name: 'ESKO S7'}
+    - route_code: "S5"
+      select:
+        - {number: '44323'}
     - route_code: '\1'
       select: [{name: '/(S[0-9]{1,2})'}]
     - route_code: '\1'
