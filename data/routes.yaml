@@ -222,6 +222,7 @@ agencies:
     routes:
       # R* routes
       - id: "KM_R1"
+        match: [{id: "KM_R1/Z1"}]
         short_name: "R1"
         long_name: "Warszawa — Skierniewice"
         color: "008800"
@@ -363,11 +364,6 @@ agencies:
         long_name: "Stacja Modlin — Lotnisko Modlin"
         color: "F5B900"
         type: 3
-      - id: "KM"
-        match: [{short_name: "*"}]
-        short_name: "KM"
-        long_name: ""
-        color: "008800"
 
   - id: "KML"
     name: "Koleje Małopolskie"
