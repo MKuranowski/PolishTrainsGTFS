@@ -3,11 +3,17 @@
 
 package backoff
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+type Status int
 
 const (
-	Success = true
-	Failure = false
+	Success Status = iota
+	Failure
+	Retry
 )
 
 type Backoff struct {
@@ -24,25 +30,31 @@ func (b *Backoff) StartRun() {
 	b.lastRun = time.Now()
 }
 
-func (b *Backoff) EndRun(success bool) time.Time {
-	if success {
+func (b *Backoff) EndRun(status Status) time.Time {
+	switch status {
+	case Success:
 		b.Failures = 0
 		b.nextRun = b.lastRun.Add(b.Period)
-	} else {
+
+	case Failure:
 		backoffExponent := b.Failures
-		backoffBase := b.ExponentialBackoffBase
 		b.Failures++
 
-		if backoffBase == 0 {
-			backoffBase = b.Period
-		}
 		if b.MaxBackoffExponent > 0 && backoffExponent > b.MaxBackoffExponent {
 			backoffExponent = b.MaxBackoffExponent
 		}
 
-		sleep := time.Duration(1<<backoffExponent) * backoffBase
+		sleep := time.Duration(1<<backoffExponent) * b.getBackoffBase()
 		b.nextRun = b.lastRun.Add(sleep)
+
+	case Retry:
+		b.Failures = 1
+		b.nextRun = b.lastRun.Add(b.getBackoffBase())
+
+	default:
+		panic(fmt.Errorf("invalid status enum value: %d", status))
 	}
+
 	return b.nextRun
 }
 
@@ -50,14 +62,9 @@ func (b *Backoff) Wait() {
 	time.Sleep(time.Until(b.nextRun))
 }
 
-func pow(base, exp uint) uint {
-	r := uint(1)
-	for exp > 0 {
-		if exp&1 == 1 {
-			r *= base
-		}
-		base *= base
-		exp >>= 1
+func (b *Backoff) getBackoffBase() time.Duration {
+	if b.ExponentialBackoffBase == 0 {
+		return b.Period
 	}
-	return r
+	return b.ExponentialBackoffBase
 }

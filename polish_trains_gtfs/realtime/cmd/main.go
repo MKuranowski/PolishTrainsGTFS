@@ -5,6 +5,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/alternative"
@@ -79,12 +81,17 @@ func main() {
 			b.Wait()
 			b.StartRun()
 			totalFacts, stats, err := run(static)
-			if err != nil && canBackoff(err) {
-				clientPool.BackoffLast()
-				nextTry := b.EndRun(backoff.Failure)
-				slog.Error("Feed update failure", "error", err, "next_try", nextTry)
-			} else if err != nil {
-				log.Fatal(err)
+			if err != nil {
+				if canRetry(err) {
+					nextTry := b.EndRun(backoff.Retry)
+					slog.Error("Feed update failure", "error", err, "next_try", nextTry)
+				} else if canBackoff(err) {
+					clientPool.BackoffLast()
+					nextTry := b.EndRun(backoff.Failure)
+					slog.Error("Feed update failure", "error", err, "next_try", nextTry)
+				} else {
+					log.Fatal(err)
+				}
 			} else {
 				b.EndRun(backoff.Success)
 				slog.Info("Feed updated successfully", "facts", totalFacts, "stats", stats)
@@ -165,6 +172,11 @@ func writeOutput(facts *fact.Container) error {
 	}
 
 	return nil
+}
+
+func canRetry(err error) bool {
+	// Retry when hit by ECONNRESET, presumably by the VPN
+	return errors.Is(err, syscall.ECONNRESET)
 }
 
 func canBackoff(err error) bool {
