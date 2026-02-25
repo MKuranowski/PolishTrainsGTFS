@@ -73,6 +73,7 @@ GTFS_HEADERS = {
         "stop_id",
         "arrival_time",
         "departure_time",
+        "shape_dist_traveled",
         "platform",
         "track",
         "plk_category_code",
@@ -90,7 +91,13 @@ GTFS_HEADERS = {
         "plk_train_number",
         "plk_train_name",
     ),
-    "shapes.txt": ("shape_id", "shape_pt_sequence", "shape_pt_lat", "shape_pt_lon"),
+    "shapes.txt": (
+        "shape_id",
+        "shape_pt_sequence",
+        "shape_pt_lat",
+        "shape_pt_lon",
+        "shape_dist_traveled",
+    ),
 }
 
 

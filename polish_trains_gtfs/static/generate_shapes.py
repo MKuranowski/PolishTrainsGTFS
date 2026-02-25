@@ -51,7 +51,7 @@ class GenerateShapes(Task):
 
         # 5. Group trips by the same sequence of nodes
         self.logger.debug("Grouping trips with the same shape")
-        grouped_trips = defaultdict[tuple[int, ...], list[str]](list)
+        grouped_trips = defaultdict[tuple[_MatchedNode, ...], list[str]](list)
         for trip_id, nodes in trips:
             grouped_trips[nodes].append(trip_id)
 
@@ -67,15 +67,25 @@ class GenerateShapes(Task):
                         100 * shape_id / len(grouped_trips),
                     )
 
-                shape = self.generate_shape(graph, nodes)
+                shape, distances = self.generate_shape(graph, nodes)
                 r.db.raw_execute("INSERT INTO shapes (shape_id) VALUES (?)", (shape_id,))
                 r.db.raw_execute_many(
-                    "INSERT INTO shape_points (shape_id, sequence, lat, lon) VALUES (?, ?, ?, ?)",
-                    ((shape_id, idx, lat, lon) for idx, (lat, lon) in enumerate(shape)),
+                    "INSERT INTO shape_points (shape_id, sequence, lat, lon, shape_dist_traveled) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    ((shape_id, idx, lat, lon, dist) for idx, (lat, lon, dist) in enumerate(shape)),
                 )
                 r.db.raw_execute_many(
                     "UPDATE trips SET shape_id = ? WHERE trip_id = ?",
                     ((shape_id, trip_id) for trip_id in trips),
+                )
+                r.db.raw_execute_many(
+                    "UPDATE stop_times SET shape_dist_traveled = ? "
+                    "WHERE trip_id = ? AND stop_sequence = ?",
+                    (
+                        (dist, trip_id, stop_seq)
+                        for trip_id in trips
+                        for stop_seq, dist in distances.items()
+                    ),
                 )
 
     def load_graph(self, osm_path: StrPath) -> routx.Graph:
@@ -164,19 +174,19 @@ class GenerateShapes(Task):
         stop_times: Sequence[StopTime],
         i: int,
         stop_positions: "_StopPositions",
-    ) -> int:
+    ) -> "_MatchedNode":
         stop_time = stop_times[i]
         station_id = _extract_station_id(stop_time.stop_id)
         candidates = stop_positions[station_id]
 
         # Fast track stations with single node
         if len(candidates) <= 1:
-            return candidates[0].node_id
+            return _MatchedNode(candidates[0].node_id, stop_time.stop_sequence)
 
         # Try to match on platform
         for candidate in candidates:
             if stop_time.platform in candidate.platforms:
-                return candidate.node_id
+                return _MatchedNode(candidate.node_id, stop_time.stop_sequence)
 
         # Try to match on "towards"
         prev_station_id = _extract_station_id(stop_times[i - 1].stop_id) if i >= 1 else None
@@ -185,23 +195,55 @@ class GenerateShapes(Task):
         )
         for candidate in candidates:
             if next_station_id in candidate.towards or prev_station_id in candidate.towards:
-                return candidate.node_id
+                return _MatchedNode(candidate.node_id, stop_time.stop_sequence)
 
         # Use the fallback candidate
         for candidate in candidates:
             if candidate.is_fallback():
-                return candidate.node_id
+                return _MatchedNode(candidate.node_id, stop_time.stop_sequence)
 
         # No fallback stop_position - raise error
         raise ValueError(f"no fallback public_transport=stop_position at station {station_id}")
 
-    def generate_shape(self, graph: routx.Graph, nodes: Iterable[int]) -> Iterable["_LatLon"]:
-        node_pairs = pairwise(nodes)
-        legs = (self.generate_shape_leg(graph, a, b) for a, b in node_pairs)
-        nodes = _flatten_nodes(legs)
-        for node_id in nodes:
-            node = graph[node_id]
-            yield node.lat, node.lon
+    def generate_shape(
+        self,
+        graph: routx.Graph,
+        nodes: Iterable["_MatchedNode"],
+    ) -> tuple[list[tuple[float, float, float]], dict[int, float]]:
+        shape = list[tuple[float, float, float]]()
+        distances = dict[int, float]()
+        total_distance = 0.0
+
+        for i, (from_, to) in enumerate(pairwise(nodes)):
+            # Record the distance to the first stop
+            if i == 0:
+                assert from_.stop_sequence is not None
+                distances[from_.stop_sequence] = 0.0
+
+            # Generate the shape for the leg
+            leg_nodes = self.generate_shape_leg(graph, from_.node_id, to.node_id)
+
+            # Skip first node, as it's the same as previous leg's last node,
+            # except for the very first leg
+            offset = 0 if i == 0 else 1
+
+            # Save the points of the shape
+            for node_id in leg_nodes[offset:]:
+                node = graph[node_id]
+                lat = node.lat
+                lon = node.lon
+
+                if shape:
+                    prev_lat, prev_lon, _ = shape[-1]
+                    total_distance += routx.earth_distance(lat, lon, prev_lat, prev_lon)
+
+                shape.append((lat, lon, total_distance))
+
+            # Record the distance to the stop
+            if to.stop_sequence is not None:
+                distances[to.stop_sequence] = total_distance
+
+        return shape, distances
 
     def generate_shape_leg(self, graph: routx.Graph, from_: int, to: int) -> list[int]:
         try:
@@ -216,9 +258,7 @@ class GenerateShapes(Task):
         return nodes
 
 
-_LatLon = tuple[float, float]
-
-_MatchedTrip = tuple[str, tuple[int, ...]]
+_MatchedTrip = tuple[str, tuple["_MatchedNode", ...]]
 
 _StopPositions = defaultdict[str, list["_StopPosition"]]
 
@@ -233,18 +273,15 @@ class _StopPosition:
         return not self.towards
 
 
+@dataclass(frozen=True)
+class _MatchedNode:
+    node_id: int
+    stop_sequence: int | None = None
+
+
 def _unpack_osm_list(value: str, separator: str = ";") -> list[str]:
     return value.split(separator) if value else []
 
 
 def _extract_station_id(x: str) -> str:
     return x.partition("_")[0]
-
-
-def _flatten_nodes(legs: Iterable[Iterable[int]]) -> Iterable[int]:
-    prev: int | None = None
-    for leg in legs:
-        for node in leg:
-            if node != prev:
-                prev = node
-                yield node
