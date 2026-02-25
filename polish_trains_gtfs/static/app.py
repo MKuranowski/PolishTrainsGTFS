@@ -13,6 +13,7 @@ from . import external
 from .add_train_names import AddTrainNames
 from .curate_routes import CurateRoutes
 from .extract_routes import ExtractRoutes
+from .generate_shapes import GenerateShapes
 from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
 from .load_stops import LoadStops
@@ -82,12 +83,14 @@ GTFS_HEADERS = {
         "trip_id",
         "route_id",
         "service_id",
+        "shape_id",
         "trip_short_name",
         "trip_headsign",
         "plk_category_code",
         "plk_train_number",
         "plk_train_name",
     ),
+    "shapes.txt": ("shape_id", "shape_pt_sequence", "shape_pt_lat", "shape_pt_lon"),
 }
 
 
@@ -195,6 +198,7 @@ class PolishTrainsGTFS(App):
                     ),
                     task_name="SetStopTimezone",
                 ),
+                GenerateShapes("pl_rail_map.osm"),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
