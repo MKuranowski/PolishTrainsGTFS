@@ -1,3 +1,5 @@
 impuls ~= 2.4.1
 ijson ~= 3.4
+osmium ~= 4.3
 protobuf ~= 6.33
+routx ~= 1.0.5

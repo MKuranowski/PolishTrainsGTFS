@@ -1,0 +1,250 @@
+# SPDX-FileCopyrightText: 2025-2026 Mikołaj Kuranowski
+# SPDX-License-Identifier: MIT
+
+from collections import defaultdict
+from collections.abc import Iterable, Sequence
+from dataclasses import dataclass, field
+from itertools import pairwise
+from typing import cast
+
+import osmium
+import osmium.filter
+import osmium.osm
+import routx
+from impuls import DBConnection, Task, TaskRuntime
+from impuls.model import StopTime
+from impuls.tools.types import StrPath
+
+# TODO: Add support for bus shapes
+# TODO: Add shape_dist_traveled
+# TODO: Add support for "force-via", in particular:
+#       Frankfurt (Oder) -> Berlin Lichtenberg, via Biesenhorst (e.g. PLK_IC_2026_158260528)
+#       Szczecin Zdroje -> Szczecin Gł., via Port Centralny (e.g. PLK_PR_2026_988943721)
+#       Szczecin Gł. -> Szczecin Zdroje, via Pomorzany (e.g. PLK_PR_2026_988943721)
+#       Szczecin Dąbie -> Szczecin Gł., via Port Centralny (e.g. PLK_IC_2026_174033193)
+#       Szczecin Gł. -> Szczecin Dąbie, via Pomorzany (e.g. PLK_IC_2026_174033193)
+
+
+class GenerateShapes(Task):
+    def __init__(self, graph_resource: str) -> None:
+        super().__init__()
+        self.graph_resource = graph_resource
+
+    def execute(self, r: TaskRuntime) -> None:
+        osm_path = r.resources[self.graph_resource].stored_at
+
+        # 1. Load the graph
+        self.logger.info("Loading routing graph from %s", self.graph_resource)
+        graph = self.load_graph(osm_path)
+
+        # 2. Load per-station stop positions
+        self.logger.info("Loading stop positions from %s", self.graph_resource)
+        stop_positions = self.load_stop_positions(osm_path)
+
+        # 3. Select trips to generate shapes for
+        self.logger.info("Selecting trips")
+        trip_ids = self.select_trips(r.db)
+
+        # 4. Match each trips' stops with nodes
+        self.logger.debug("Matching %d trips with nodes", len(trip_ids))
+        trips = [self.match_trip(trip_id, r.db, stop_positions) for trip_id in trip_ids]
+
+        # 5. Group trips by the same sequence of nodes
+        self.logger.debug("Grouping trips with the same shape")
+        grouped_trips = defaultdict[tuple[int, ...], list[str]](list)
+        for trip_id, nodes in trips:
+            grouped_trips[nodes].append(trip_id)
+
+        # 6. Generate shapes for every unique sequence of nodes
+        self.logger.info("Generating %d shapes", len(grouped_trips))
+        with r.db.transaction():
+            for shape_id, (nodes, trips) in enumerate(grouped_trips.items()):
+                if (shape_id + 1) % 50 == 0:
+                    self.logger.debug(
+                        "Generated %d / %d (%.2f %%) shapes",
+                        shape_id,
+                        len(grouped_trips),
+                        100 * shape_id / len(grouped_trips),
+                    )
+
+                shape = self.generate_shape(graph, nodes)
+                r.db.raw_execute("INSERT INTO shapes (shape_id) VALUES (?)", (shape_id,))
+                r.db.raw_execute_many(
+                    "INSERT INTO shape_points (shape_id, sequence, lat, lon) VALUES (?, ?, ?, ?)",
+                    ((shape_id, idx, lat, lon) for idx, (lat, lon) in enumerate(shape)),
+                )
+                r.db.raw_execute_many(
+                    "UPDATE trips SET shape_id = ? WHERE trip_id = ?",
+                    ((shape_id, trip_id) for trip_id in trips),
+                )
+
+    def load_graph(self, osm_path: StrPath) -> routx.Graph:
+        g = routx.Graph()
+        g.add_from_osm_file(
+            osm_path,
+            routx.OsmProfile.RAILWAY,
+            format=routx.OsmFormat.XML,
+        )
+        return g
+
+    def load_stop_positions(self, osm_path: StrPath) -> "_StopPositions":
+        stop_positions = _StopPositions(list)
+        self._load_specific_stop_positions(osm_path, stop_positions)
+        self._load_generic_stop_positions(osm_path, stop_positions)
+        return stop_positions
+
+    @staticmethod
+    def _load_specific_stop_positions(osm_path: StrPath, stop_positions: "_StopPositions") -> None:
+        fp = (
+            osmium.FileProcessor(osm_path)
+            .with_filter(osmium.filter.EntityFilter(osmium.osm.NODE))
+            .with_filter(osmium.filter.TagFilter(("public_transport", "stop_position")))
+        )
+
+        for node in fp:
+            assert isinstance(node, osmium.osm.Node)
+
+            station_id = node.tags.get("ref:station") or ""
+            if not station_id:
+                continue
+
+            platforms = set(_unpack_osm_list(node.tags.get("platforms") or ""))
+            match node.tags.get("towards"):
+                case "fallback" | "" | None:
+                    towards = set[str]()
+                case lst:
+                    towards = set(_unpack_osm_list(lst))
+
+            stop_positions[station_id].append(_StopPosition(node.id, towards, platforms))
+
+    @staticmethod
+    def _load_generic_stop_positions(osm_path: StrPath, stop_positions: "_StopPositions") -> None:
+        fp = (
+            osmium.FileProcessor(osm_path)
+            .with_filter(osmium.filter.EntityFilter(osmium.osm.NODE))
+            .with_filter(osmium.filter.TagFilter(("railway", "station")))
+        )
+
+        for node in fp:
+            assert isinstance(node, osmium.osm.Node)
+
+            station_id = node.tags.get("ref") or ""
+            if station_id and station_id not in stop_positions:
+                stop_positions[station_id] = [_StopPosition(node.id)]
+
+    def select_trips(self, db: DBConnection) -> list[str]:
+        with db.raw_execute(
+            "SELECT trip_id FROM trips LEFT JOIN routes USING (route_id) WHERE routes.type = 2",
+        ) as q:
+            return [cast(str, i[0]) for i in q]
+
+    def match_trip(
+        self,
+        trip_id: str,
+        db: DBConnection,
+        stop_positions: "_StopPositions",
+    ) -> "_MatchedTrip":
+        # Retrieve all stop_times of the trip
+        with db.typed_out_execute(
+            "SELECT * FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence ASC",
+            StopTime,
+            (trip_id,),
+        ) as q:
+            stop_times = list(q)
+
+        # Match each stop with a node in the graph
+        nodes = tuple(
+            self.match_node(stop_times, i, stop_positions) for i in range(len(stop_times))
+        )
+
+        return trip_id, nodes
+
+    @staticmethod
+    def match_node(
+        stop_times: Sequence[StopTime],
+        i: int,
+        stop_positions: "_StopPositions",
+    ) -> int:
+        stop_time = stop_times[i]
+        station_id = _extract_station_id(stop_time.stop_id)
+        candidates = stop_positions[station_id]
+
+        # Fast track stations with single node
+        if len(candidates) <= 1:
+            return candidates[0].node_id
+
+        # Try to match on platform
+        for candidate in candidates:
+            if stop_time.platform in candidate.platforms:
+                return candidate.node_id
+
+        # Try to match on "towards"
+        prev_station_id = _extract_station_id(stop_times[i - 1].stop_id) if i >= 1 else None
+        next_station_id = (
+            _extract_station_id(stop_times[i + 1].stop_id) if (i + 1) < len(stop_times) else None
+        )
+        for candidate in candidates:
+            if next_station_id in candidate.towards or prev_station_id in candidate.towards:
+                return candidate.node_id
+
+        # Use the fallback candidate
+        for candidate in candidates:
+            if candidate.is_fallback():
+                return candidate.node_id
+
+        # No fallback stop_position - raise error
+        raise ValueError(f"no fallback public_transport=stop_position at station {station_id}")
+
+    def generate_shape(self, graph: routx.Graph, nodes: Iterable[int]) -> Iterable["_LatLon"]:
+        node_pairs = pairwise(nodes)
+        legs = (self.generate_shape_leg(graph, a, b) for a, b in node_pairs)
+        nodes = _flatten_nodes(legs)
+        for node_id in nodes:
+            node = graph[node_id]
+            yield node.lat, node.lon
+
+    def generate_shape_leg(self, graph: routx.Graph, from_: int, to: int) -> list[int]:
+        try:
+            nodes = graph.find_route(from_, to, without_turn_around=False)
+        except routx.StepLimitExceeded:
+            nodes = []
+
+        if not nodes:
+            self.logger.error("No shape between nodes %d and %d", from_, to)
+            return [from_, to]
+
+        return nodes
+
+
+_LatLon = tuple[float, float]
+
+_MatchedTrip = tuple[str, tuple[int, ...]]
+
+_StopPositions = defaultdict[str, list["_StopPosition"]]
+
+
+@dataclass
+class _StopPosition:
+    node_id: int
+    towards: set[str] = field(default_factory=set[str])
+    platforms: set[str] = field(default_factory=set[str])
+
+    def is_fallback(self) -> bool:
+        return not self.towards
+
+
+def _unpack_osm_list(value: str, separator: str = ";") -> list[str]:
+    return value.split(separator) if value else []
+
+
+def _extract_station_id(x: str) -> str:
+    return x.partition("_")[0]
+
+
+def _flatten_nodes(legs: Iterable[Iterable[int]]) -> Iterable[int]:
+    prev: int | None = None
+    for leg in legs:
+        for node in leg:
+            if node != prev:
+                prev = node
+                yield node
