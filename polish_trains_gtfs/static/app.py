@@ -147,6 +147,7 @@ class PolishTrainsGTFS(App):
                 "bus_routes.yaml": LocalResource("data/bus_routes.yaml"),
                 "routes.yaml": LocalResource("data/routes.yaml"),
                 "route_extract.yaml": LocalResource("data/route_extract.yaml"),
+                "shapes.yaml": LocalResource("data/shapes.yaml"),
             },
             tasks=[
                 LoadSchedules(),
@@ -205,7 +206,7 @@ class PolishTrainsGTFS(App):
                     ),
                     task_name="SetStopTimezone",
                 ),
-                GenerateShapes("pl_rail_map.osm"),
+                GenerateShapes("pl_rail_map.osm", "shapes.yaml"),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )

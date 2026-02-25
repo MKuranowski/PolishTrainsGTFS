@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 from collections import defaultdict
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import pairwise
-from typing import cast
+from typing import Any, cast
 
 import osmium
 import osmium.filter
@@ -16,22 +16,19 @@ from impuls.model import StopTime
 from impuls.tools.types import StrPath
 
 # TODO: Add support for bus shapes
-# TODO: Add shape_dist_traveled
-# TODO: Add support for "force-via", in particular:
-#       Frankfurt (Oder) -> Berlin Lichtenberg, via Biesenhorst (e.g. PLK_IC_2026_158260528)
-#       Szczecin Zdroje -> Szczecin Gł., via Port Centralny (e.g. PLK_PR_2026_988943721)
-#       Szczecin Gł. -> Szczecin Zdroje, via Pomorzany (e.g. PLK_PR_2026_988943721)
-#       Szczecin Dąbie -> Szczecin Gł., via Port Centralny (e.g. PLK_IC_2026_174033193)
-#       Szczecin Gł. -> Szczecin Dąbie, via Pomorzany (e.g. PLK_IC_2026_174033193)
 
 
 class GenerateShapes(Task):
-    def __init__(self, graph_resource: str) -> None:
+    def __init__(self, graph_resource: str, extra_config_resource: str | None = None) -> None:
         super().__init__()
         self.graph_resource = graph_resource
+        self.extra_config_resource = extra_config_resource
 
     def execute(self, r: TaskRuntime) -> None:
         osm_path = r.resources[self.graph_resource].stored_at
+        extra_config = (  # type: ignore
+            r.resources[self.extra_config_resource].yaml() if self.extra_config_resource else {}
+        )
 
         # 1. Load the graph
         self.logger.info("Loading routing graph from %s", self.graph_resource)
@@ -47,7 +44,8 @@ class GenerateShapes(Task):
 
         # 4. Match each trips' stops with nodes
         self.logger.debug("Matching %d trips with nodes", len(trip_ids))
-        trips = [self.match_trip(trip_id, r.db, stop_positions) for trip_id in trip_ids]
+        force_via = self._load_force_via(graph, extra_config)
+        trips = [self.match_trip(trip_id, r.db, stop_positions, force_via) for trip_id in trip_ids]
 
         # 5. Group trips by the same sequence of nodes
         self.logger.debug("Grouping trips with the same shape")
@@ -145,6 +143,21 @@ class GenerateShapes(Task):
             if station_id and station_id not in stop_positions:
                 stop_positions[station_id] = [_StopPosition(node.id)]
 
+    @staticmethod
+    def _load_force_via(graph: routx.Graph, extra_config: Any) -> dict[tuple[str, str], int]:
+        force_via_config = extra_config.get("force_via", [])
+        if not force_via_config:
+            return {}
+
+        kd_tree = routx.KDTree.build(graph)
+        force_via = dict[tuple[str, str], int]()
+
+        for cfg in force_via_config:
+            via_node = kd_tree.find_nearest_node(*cfg["via"]).id  # type: ignore
+            force_via[cfg["from"], cfg["to"]] = via_node
+
+        return force_via
+
     def select_trips(self, db: DBConnection) -> list[str]:
         with db.raw_execute(
             "SELECT trip_id FROM trips LEFT JOIN routes USING (route_id) WHERE routes.type = 2",
@@ -156,6 +169,7 @@ class GenerateShapes(Task):
         trip_id: str,
         db: DBConnection,
         stop_positions: "_StopPositions",
+        force_via: Mapping[tuple[str, str], int],
     ) -> "_MatchedTrip":
         # Retrieve all stop_times of the trip
         with db.typed_out_execute(
@@ -166,11 +180,19 @@ class GenerateShapes(Task):
             stop_times = list(q)
 
         # Match each stop with a node in the graph
-        nodes = tuple(
-            self.match_node(stop_times, i, stop_positions) for i in range(len(stop_times))
-        )
+        nodes = list["_MatchedNode"]()
+        for i, stop_time in enumerate(stop_times):
+            # Check and insert a forced via node
+            if i > 0:
+                prev_station = _extract_station_id(stop_times[i - 1].stop_id)
+                station = _extract_station_id(stop_time.stop_id)
+                if via_node := force_via.get((prev_station, station)):
+                    nodes.append(_MatchedNode(via_node))
 
-        return trip_id, nodes
+            # Insert a node for the stop_time
+            nodes.append(self.match_node(stop_times, i, stop_positions))
+
+        return trip_id, tuple(nodes)
 
     @staticmethod
     def match_node(

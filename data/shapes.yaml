@@ -1,0 +1,16 @@
+force_via:
+  - from: "179212"  # Frankfurt (Oder)
+    to: "140533"  # Berlin-Lichtenberg
+    via: [52.486312, 13.551679]  # Biesenhorst, to prevent switchback at Ostkreuz
+  - from: "1107"  # Szczecin Dąbie
+    to: "273"  # Szczecin Główny
+    via: [53.408761, 14.571991]  # Port Centralny
+  - from: "1123"  # Szczecin Zdroje
+    to: "273"  # Szczecin Główny
+    via: [53.408761, 14.571991]  # Port Centralny
+  - from: "273"  # Szczecin Główny
+    to: "1107"  # Szczecin Dąbie
+    via: [53.389366, 14.524913]  # Pomorzany
+  - from: "273"  # Szczecin Główny
+    to: "1123"  # Szczecin Zdroje
+    via: [53.389366, 14.524913]  # Pomorzany
