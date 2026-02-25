@@ -72,7 +72,10 @@ class GenerateShapes(Task):
                 r.db.raw_execute_many(
                     "INSERT INTO shape_points (shape_id, sequence, lat, lon, shape_dist_traveled) "
                     "VALUES (?, ?, ?, ?, ?)",
-                    ((shape_id, idx, lat, lon, dist) for idx, (lat, lon, dist) in enumerate(shape)),
+                    (
+                        (shape_id, idx, round(lat, 6), round(lon, 6), round(dist, 3))
+                        for idx, (lat, lon, dist) in enumerate(shape)
+                    ),
                 )
                 r.db.raw_execute_many(
                     "UPDATE trips SET shape_id = ? WHERE trip_id = ?",
@@ -82,7 +85,7 @@ class GenerateShapes(Task):
                     "UPDATE stop_times SET shape_dist_traveled = ? "
                     "WHERE trip_id = ? AND stop_sequence = ?",
                     (
-                        (dist, trip_id, stop_seq)
+                        (round(dist, 3), trip_id, stop_seq)
                         for trip_id in trips
                         for stop_seq, dist in distances.items()
                     ),
