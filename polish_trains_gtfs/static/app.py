@@ -13,7 +13,7 @@ from . import external
 from .add_train_names import AddTrainNames
 from .curate_routes import CurateRoutes
 from .extract_routes import ExtractRoutes
-from .generate_shapes import GenerateShapes
+from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
 from .load_stops import LoadStops
@@ -207,6 +207,7 @@ class PolishTrainsGTFS(App):
                     task_name="SetStopTimezone",
                 ),
                 GenerateShapes("pl_rail_map.osm", "shapes.yaml"),
+                GenerateBusShapes("pl_rail_map.osm"),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
