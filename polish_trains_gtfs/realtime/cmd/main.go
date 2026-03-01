@@ -90,7 +90,7 @@ func main() {
 					nextTry := b.EndRun(backoff.Failure)
 					slog.Error("Feed update failure", "error", err, "next_try", nextTry)
 				} else {
-					log.Fatal(err)
+					log.Fatalf("Fatal error during run: %s (%#v)", err, err)
 				}
 			} else {
 				b.EndRun(backoff.Success)
