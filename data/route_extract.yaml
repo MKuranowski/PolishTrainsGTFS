@@ -7,6 +7,10 @@ KS:
     - route_code: "S5"
       select:
         - {number: '44323'}
+    - route_code: "S1"
+      select:
+        - {number: '44200'}
+        - {number: '44202'}
     - route_code: '\1'
       select: [{name: '/(S[0-9]{1,2})'}]
     - route_code: '\1'
