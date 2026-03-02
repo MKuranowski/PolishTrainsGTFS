@@ -10,6 +10,8 @@ from impuls import DBConnection, Task, TaskRuntime
 from impuls.errors import DataError, MultipleDataErrors
 from impuls.model import Trip
 
+from .util import describe
+
 SelectorConfig = Mapping[str, Any]
 
 
@@ -180,7 +182,7 @@ class ExtractRoutes(Task):
 
         with r.db.transaction():
             self.run_assignments(r.db, assignments)
-        self.check_leftover()
+        self.check_leftover(r.db)
 
     def assign_trips_for_agency(
         self,
@@ -260,11 +262,14 @@ class ExtractRoutes(Task):
             "(SELECT 1 FROM trips WHERE trips.route_id = routes.route_id)"
         )
 
-    def check_leftover(self) -> None:
+    def check_leftover(self, db: DBConnection) -> None:
         if self.leftover:
             raise MultipleDataErrors(
                 "route extraction",
-                [DataError(f"no route extracted for trip {i}") for i in self.leftover],
+                [
+                    DataError(f"no route extracted for {describe.trip(db, i.id)}")
+                    for i in self.leftover
+                ],
             )
 
 
