@@ -6,6 +6,7 @@ package source
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -58,10 +59,11 @@ func NewPageFetchOptions() PageFetchOptions {
 
 func FetchOperations(ctx context.Context, apikey string, client http2.Doer, options PageFetchOptions) (*Operations, error) {
 	var all *Operations
+	cacheBuster := time.Now().Unix()
 
 	for page := 1; page <= options.MaxPages; page++ {
 		slog.Debug("Fetching operations", "page", page)
-		o, err := FetchOperationsPage(ctx, apikey, client, page, options.PageSize)
+		o, err := FetchOperationsPage(ctx, apikey, client, page, options.PageSize, cacheBuster)
 		if err != nil {
 			return nil, err
 		}
@@ -87,18 +89,27 @@ func FetchOperations(ctx context.Context, apikey string, client http2.Doer, opti
 	return nil, ErrTooManyPages
 }
 
-func FetchOperationsPage(ctx context.Context, apikey string, client http2.Doer, page, pageSize int) (o *Operations, err error) {
+func FetchOperationsPage(ctx context.Context, apikey string, client http2.Doer, page, pageSize int, cacheBuster int64) (o *Operations, err error) {
+	query := url.Values{
+		"page":            {strconv.Itoa(page)},
+		"pageSize":        {strconv.Itoa(pageSize)},
+		"fullRoutes":      {"true"},
+		"carriersExclude": {"WKD"},
+	}
+
+	// Add a fake cache-busting parameter
+	if cacheBuster > 100 || cacheBuster < 0 {
+		query.Add("page", strconv.FormatInt(cacheBuster, 10))
+	} else if cacheBuster != 0 {
+		panic(fmt.Sprintf("cacheBuster value %d is too small, should be bigger than 100", cacheBuster))
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://pdp-api.plk-sa.pl/api/v1/operations/shortened", nil)
 	if err != nil {
 		return
 	}
 	req.Header.Set("X-Api-Key", apikey)
-	req.URL.RawQuery = url.Values{
-		"page":            {strconv.Itoa(page)},
-		"pageSize":        {strconv.Itoa(pageSize)},
-		"fullRoutes":      {"true"},
-		"carriersExclude": {"WKD"},
-	}.Encode()
+	req.URL.RawQuery = query.Encode()
 
 	return http2.GetJSON[Operations](client, req)
 }
