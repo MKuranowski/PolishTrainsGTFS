@@ -90,18 +90,16 @@ func FetchOperations(ctx context.Context, apikey string, client http2.Doer, opti
 }
 
 func FetchOperationsPage(ctx context.Context, apikey string, client http2.Doer, page, pageSize int, cacheBuster int64) (o *Operations, err error) {
+	carriersExclude := "WKD"
+	if cacheBuster != 0 {
+		carriersExclude = fmt.Sprintf("WKD,%d", cacheBuster)
+	}
+
 	query := url.Values{
 		"page":            {strconv.Itoa(page)},
 		"pageSize":        {strconv.Itoa(pageSize)},
 		"fullRoutes":      {"true"},
-		"carriersExclude": {"WKD"},
-	}
-
-	// Add a fake cache-busting parameter
-	if cacheBuster > 100 || cacheBuster < 0 {
-		query.Add("page", strconv.FormatInt(cacheBuster, 10))
-	} else if cacheBuster != 0 {
-		panic(fmt.Sprintf("cacheBuster value %d is too small, should be bigger than 100", cacheBuster))
+		"carriersExclude": {carriersExclude},
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://pdp-api.plk-sa.pl/api/v1/operations/shortened", nil)
