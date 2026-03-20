@@ -309,7 +309,7 @@ agencies:
         long_name: "Warszawa — Małkinia"
         color: "008800"
       - id: "KM_R61"
-        match: [{short_name: "*R61*"}]
+        match: [{short_name: "*R61*"}, {short_name: "*Z61*"}]
         short_name: "R61"
         long_name: "Tłuszcz — Ostrołęka"
         color: "008800"
