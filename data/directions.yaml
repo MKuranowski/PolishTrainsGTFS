@@ -2,6 +2,8 @@
 - agencies: ["SKM", "KM"]
   outbound_pairs:
     - [33506, 33605] # W-wa Zachodnia -> W-wa Centralna
+    - [33498, 33571] # W-wa Ochota -> W-wa Śródmieście
+    - [36103, 36111] # W-wa Gdańska -> W-wa ZOO
     - [23309, 23333] # Ostrołęka -> Grabowo
     - [32623, 32607] # Płock Trzepowo -> Płock
     - [32326, 32201] # Kutno Azory -> Kutno
