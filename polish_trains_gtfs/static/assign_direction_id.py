@@ -43,7 +43,7 @@ class AssignDirectionID(Task):
 
     def assign(self, db: DBConnection, config: Config) -> None:
         outbound_pairs = _parse_config_pairs(config["outbound_pairs"])
-        ignored_pairs = _parse_config_pairs(config.get("pairs_to_ignore", tuple()))
+        ignored_pairs = _parse_config_pairs(config.get("pairs_to_ignore", []), add_backwards=True)
 
         all_trips = list(_trips_of_config(db, config))
         queue = deque(_QueueItem.from_db(trip_id, db) for trip_id in all_trips)
@@ -175,12 +175,19 @@ def _trips_of_config(db: DBConnection, c: Config) -> Iterable[str]:
             yield from (cast(str, r[0]) for r in q)
 
 
-def _parse_config_pairs(pairs: Sequence[Sequence[str | int]]) -> set[tuple[str, str]]:
+def _parse_config_pairs(
+    pairs: Sequence[Sequence[str | int]],
+    add_backwards: bool = False,
+) -> set[tuple[str, str]]:
     parsed = set[tuple[str, str]]()
     for pair in pairs:
         if len(pair) != 2:
             raise ValueError("outbound_pairs entries must have exactly 2 elements")
-        parsed.add((str(pair[0]), str(pair[1])))
+        a = str(pair[0])
+        b = str(pair[1])
+        parsed.add((a, b))
+        if add_backwards:
+            parsed.add((b, a))
     return parsed
 
 
