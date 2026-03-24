@@ -294,52 +294,52 @@ agencies:
         color: "005A00"
       # R?? routes
       - id: "KM_R21"
-        match: [{short_name: "*R21*"}]
+        match: [{short_name: "*R21*"}, {short_name: "*Z21*"}]
         short_name: "R21"
         long_name: "Siedlce — Czeremcha"
         color: "008800"
       - id: "KM_R31"
-        match: [{short_name: "*R31*"}]
+        match: [{short_name: "*R31*"}, {short_name: "*Z31*"}]
         short_name: "R31"
         long_name: "Kutno — Sierpc"
         color: "008800"
       - id: "KM_R60"
-        match: [{short_name: "*R60*"}]
+        match: [{short_name: "*R60*"}, {short_name: "*Z60*"}]
         short_name: "R60"
         long_name: "Warszawa — Małkinia"
         color: "008800"
       - id: "KM_R61"
-        match: [{short_name: "*R61*"}]
+        match: [{short_name: "*R61*"}, {short_name: "*Z61*"}]
         short_name: "R61"
         long_name: "Tłuszcz — Ostrołęka"
         color: "008800"
       - id: "KM_R62"
-        match: [{short_name: "*R62*"}]
+        match: [{short_name: "*R62*"}, {short_name: "*Z62*"}]
         short_name: "R62"
         long_name: "Ostrołęka — Chorzele"
         color: "008800"
       - id: "KM_R80"
-        match: [{short_name: "*R80*"}]
+        match: [{short_name: "*R80*"}, {short_name: "*Z80*"}]
         short_name: "R80"
         long_name: "Warszawa — Skarżysko-Kamienna"
         color: "008800"
       - id: "KM_R81"
-        match: [{short_name: "*R81*"}]
+        match: [{short_name: "*R81*"}, {short_name: "*Z81*"}]
         short_name: "R81"
         long_name: "Dęblin — Radom"
         color: "008800"
       - id: "KM_R82"
-        match: [{short_name: "*R82*"}]
+        match: [{short_name: "*R82*"}, {short_name: "*Z82*"}]
         short_name: "R82"
         long_name: "Radom — Drzewca"
         color: "008800"
       - id: "KM_R90"
-        match: [{short_name: "*R90*"}]
+        match: [{short_name: "*R90*"}, {short_name: "*Z90*"}]
         short_name: "R90"
         long_name: "Warszawa — Działdowo"
         color: "008800"
       - id: "KM_R91"
-        match: [{short_name: "*R91*"}]
+        match: [{short_name: "*R91*"}, {short_name: "*Z91*"}]
         short_name: "R91"
         long_name: "Nasielsk — Sierpc"
         color: "008800"
@@ -350,7 +350,7 @@ agencies:
         long_name: "Warszawa — Skierniewice"
         color: "008800"
       - id: "KM_R2"
-        match: [{short_name: "*R2*"}]
+        match: [{short_name: "*R2*"}, {short_name: "*Z2*"}]
         short_name: "R2"
         long_name: "Warszawa — Łuków"
         color: "008800"
@@ -360,22 +360,22 @@ agencies:
         long_name: "Warszawa — Kutno"
         color: "008800"
       - id: "KM_R6"
-        match: [{short_name: "*R6*"}]
+        match: [{short_name: "*R6*"}, {short_name: "*Z6*"}]
         short_name: "R6"
         long_name: "Warszawa — Małkinia"
         color: "008800"
       - id: "KM_R7"
-        match: [{short_name: "*R7*"}]
+        match: [{short_name: "*R7*"}, {short_name: "*Z7*"}]
         short_name: "R7"
         long_name: "Warszawa — Dęblin"
         color: "008800"
       - id: "KM_R8"
-        match: [{short_name: "*R8*"}]
+        match: [{short_name: "*R8*"}, {short_name: "*Z8*"}]
         short_name: "R8"
         long_name: "Warszawa — Skarżysko-Kamienna"
         color: "008800"
       - id: "KM_R9"
-        match: [{short_name: "*R9*"}]
+        match: [{short_name: "*R9*"}, {short_name: "*Z9*"}]
         short_name: "R9"
         long_name: "Warszawa — Działdowo"
         color: "008800"
