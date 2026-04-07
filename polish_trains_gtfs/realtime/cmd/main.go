@@ -11,6 +11,7 @@ import (
 	"log"
 	"log/slog"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -175,8 +176,14 @@ func writeOutput(facts *fact.Container) error {
 }
 
 func canRetry(err error) bool {
-	// Retry when hit by ECONNRESET, presumably by the VPN
-	return errors.Is(err, syscall.ECONNRESET) || strings.Contains(err.Error(), "connection reset by peer")
+	// Retry when hit by:
+	// - ECONNRESET, presumably by the VPN
+	// - i/o timeout, presumably also with the VPN
+	str := err.Error()
+	return (errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, os.ErrDeadlineExceeded) ||
+		strings.Contains(str, "connection reset by peer") ||
+		(strings.Contains(str, "read udp") && strings.Contains(str, "i/o timeout")))
 }
 
 func canBackoff(err error) bool {
