@@ -98,6 +98,8 @@ func CarrierCodeToAgencyID(cc string) string {
 		return "LEO"
 	case "ŁKA":
 		return "LKA"
+	case "PAR-WOL":
+		return "PW"
 	default:
 		return cc
 	}

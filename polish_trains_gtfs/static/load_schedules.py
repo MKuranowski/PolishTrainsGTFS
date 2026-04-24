@@ -18,6 +18,7 @@ AGENCY_ID_NORMALIZER = {
     "KMŁ": "KML",
     "Leo Express": "LEO",
     "ŁKA": "LKA",
+    "PAR-WOL": "PW",
 }
 
 MINUTE = 60

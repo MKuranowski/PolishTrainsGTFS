@@ -657,6 +657,16 @@ agencies:
         long_name: "Ostdeutsche Eisenbahn"
         color: "007073"
 
+  - id: "PW"
+    name: "Parowozownia Wolsztyn"
+    url: "https://parowozowniawolsztyn.pl/"
+    phone: "+48 663 294 664"
+    routes:
+      - id: "PW_REx"
+        short_name: "REx"
+        long_name: "Retro Express"
+        color: "BD0000"
+
   - id: "PR"
     name: "PolRegio"
     url: "https://polregio.pl/"
