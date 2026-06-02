@@ -25,6 +25,11 @@ agencies:
         short_name: "EIC"
         long_name: "Express InterCity"
         color: "898989"
+      - id: "IC_ICN"
+        match: [{short_name: "*ICN*"}]
+        short_name: "ICN"
+        long_name: "Retro Nieśpieszny"
+        color: "556B2F"
       - id: "IC_IC"
         match: [{short_name: "*IC*"}]
         short_name: "IC"

@@ -197,6 +197,15 @@ class LoadSchedules(Task):
         arrival = parse_time(arrival_time, arrival_day)
         departure = parse_time(departure_time, departure_day)
 
+        if departure < arrival:
+            self.logger.warning(
+                "Departure time is before arrival time on trip %s at stop %d (plk_seq %d)",
+                trip_id,
+                stop_id,
+                plk_sequence,
+            )
+            arrival = departure
+
         arr_platform = s.get("apl", "")
         dep_platform = s.get("dpl", "")
         arr_track = s.get("atr", "")

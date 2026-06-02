@@ -126,7 +126,7 @@ class SchedulesHandler(SAXContentHandler):
         if self.chars is not None:
             self.chars.append(content)
 
-    def startElement(self, name: str, attrs: AttributesImpl[str]) -> None:
+    def startElement(self, name: str, attrs: AttributesImpl) -> None:
         if name in {"number", "version", "symbol"}:
             self.chars = []
 
