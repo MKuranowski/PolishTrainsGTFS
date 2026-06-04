@@ -219,12 +219,20 @@ class LoadSchedules(Task):
             "arrival_track": arr_track,
         }
 
+        pickup_type = 0
+        drop_off_type = 0
+
         if (plk_stop_type := s.get("sti")) is not None:
             extra_fields["plk_stop_type"] = str(plk_stop_type)
 
+            if plk_stop_type == 1: # pickup only
+                drop_off_type = 1
+            elif plk_stop_type == 2: # drop off only
+                pickup_type = 1
+
         db.raw_execute(
             "INSERT INTO stop_times (trip_id, stop_sequence, stop_id, arrival_time, "
-            "departure_time, platform, extra_fields_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "departure_time, platform, pickup_type, drop_off_type, extra_fields_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 trip_id,
                 sequence,
@@ -232,6 +240,8 @@ class LoadSchedules(Task):
                 arrival,
                 departure,
                 dep_platform or arr_platform,
+                pickup_type,
+                drop_off_type,
                 json.dumps(extra_fields),
             ),
         )

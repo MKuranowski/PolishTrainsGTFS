@@ -75,6 +75,8 @@ GTFS_HEADERS = {
         "arrival_time",
         "departure_time",
         "shape_dist_traveled",
+        "pickup_type",
+        "drop_off_type",
         "platform",
         "track",
         "plk_category_code",

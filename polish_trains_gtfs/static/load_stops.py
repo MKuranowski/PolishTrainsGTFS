@@ -22,6 +22,7 @@ class Station:
     lon: float = 0.0
     extra_id: str = ""
     country: str = ""
+    request_stop: bool = False
 
     def __bool__(self) -> bool:
         return bool(self.id and self.name and self.lat and self.lon)
@@ -45,6 +46,8 @@ class PLRailMapLoader(XmlSaxContentHandler):
                 self.current_station.name = attrs["v"]
             elif attrs["k"] == "country":
                 self.current_station.country = attrs["v"]
+            elif attrs["k"] == "request_stop" and attrs["v"] == "yes":
+                self.current_station.request_stop = True
 
     def endElement(self, name: str) -> None:
         if name == "node" and self.current_station:
@@ -90,6 +93,7 @@ class LoadStops(impuls.Task):
                     (station.id, station.extra_id),
                 )
                 db.raw_execute("DELETE FROM stops WHERE stop_id = ?", (station.extra_id,))
+
         elif station.extra_id in self.to_update:
             db.raw_execute(
                 "UPDATE stops SET stop_id = ?, name = ?, lat = ?, lon = ?, extra_fields_json = ? "
@@ -102,6 +106,13 @@ class LoadStops(impuls.Task):
                     extra_fields,
                     station.extra_id,
                 ),
+            )
+
+        if station.request_stop:
+            db.raw_execute(
+                "UPDATE stop_times SET drop_off_type = 3, pickup_type = 3 "
+                "WHERE stop_id = ? AND pickup_type = 0 AND drop_off_type = 0",
+                (station.id,),
             )
 
         self.to_update.pop(station.id, None)
