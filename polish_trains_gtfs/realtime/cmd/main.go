@@ -29,13 +29,14 @@ import (
 )
 
 var (
-	flagAlerts      = flag.Bool("alerts", false, "parse disruptions instead of operations")
+	flagAlerts      = flag.Bool("alerts", false, "include disruptions (alerts)")
 	flagAlternative = flag.Duration("alternative", 20*time.Minute, "when non-zero, fetch fresh schedules from API")
 	flagClients     = flag.String("clients", "", "path to JSON client configuration file")
 	flagGTFS        = flag.String("gtfs", "polish_trains.zip", "path to GTFS Schedule feed")
 	flagLoop        = flag.Duration("loop", 0, "when non-zero, update the feed continuously with the given period")
 	flagOutput      = flag.String("output", "polish_trains.pb", "path to output .pb file")
 	flagReadable    = flag.Bool("readable", false, "dump output in human-readable format")
+	flagUpdates     = flag.Bool("updates", true, "include operations (trip updates)")
 	flagVerbose     = flag.Bool("verbose", false, "show DEBUG logging")
 )
 
@@ -45,6 +46,9 @@ var clientPool *client.Pool
 
 func main() {
 	flag.Parse()
+	if !*flagAlerts && !*flagUpdates {
+		log.Fatal("At least one of -alerts or -updates must be enabled")
+	}
 	if *flagVerbose {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 	}
@@ -119,17 +123,40 @@ func run(static *schedules.Package) (int, match.Stats, error) {
 }
 
 func fetch(static *schedules.Package, client *client.Client) (*fact.Container, match.Stats, error) {
-	if *flagAlerts {
-		return fetchAlerts(static, client)
+	var stats match.Stats
+	var facts *fact.Container
+
+	if *flagUpdates {
+		uFacts, uStats, err := fetchUpdates(static, client)
+		if err != nil {
+			return nil, uStats, err
+		}
+		facts = uFacts
+		stats.Add(uStats)
 	}
-	return fetchUpdates(static, client)
+
+	if *flagAlerts {
+		aFacts, aStats, err := fetchAlerts(static, client)
+		if err != nil {
+			return nil, aStats, err
+		}
+		stats.Add(aStats)
+
+		if facts == nil {
+			facts = aFacts
+		} else {
+			facts.Alerts = aFacts.Alerts
+		}
+	}
+
+	return facts, stats, nil
 }
 
 func fetchAlerts(static *schedules.Package, client *client.Client) (*fact.Container, match.Stats, error) {
 	var stats match.Stats
 
 	slog.Debug("Fetching disruptions")
-	real, err := source.FetchDisruptions(context.Background(), client.Key, client)
+	real, err := source.FetchDisruptions(context.Background(), client.Key, client, static.Dates.Start, static.Dates.End)
 	if err != nil {
 		return nil, stats, err
 	}

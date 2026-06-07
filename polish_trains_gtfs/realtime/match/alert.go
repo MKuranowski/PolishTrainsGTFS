@@ -5,6 +5,7 @@ package match
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/fact"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/schedules"
@@ -19,14 +20,14 @@ func Alerts(real *source.Disruptions, static *schedules.Package, stats *Stats) *
 		Alerts:    make([]*fact.Alert, 0, len(real.Disruptions)),
 	}
 	for _, d := range real.Disruptions {
-		if a := Alert(d, static, stats); a != nil {
+		if a := Alert(d, static, stats, real.DisruptionTypes); a != nil {
 			c.Alerts = append(c.Alerts, a)
 		}
 	}
 	return c
 }
 
-func Alert(real *source.Disruption, static *schedules.Package, stats *Stats) *fact.Alert {
+func Alert(real *source.Disruption, static *schedules.Package, stats *Stats, disruptionTypes map[string]string) *fact.Alert {
 	// Try to match the trains
 	trips := make([]fact.TripSelector, 0, len(real.AffectedTrains))
 	for _, train := range real.AffectedTrains {
@@ -47,6 +48,11 @@ func Alert(real *source.Disruption, static *schedules.Package, stats *Stats) *fa
 	// Bail out when no trains match
 	if len(trips) == 0 {
 		return nil
+	}
+
+	// PDP-API uses codes like 'utr_1' in message field when message has no placeholders. Replace them with actual messages.
+	if strings.Contains(real.Message, "utr_") {
+		real.Message = disruptionTypes[real.Message]
 	}
 
 	// Convert the alert

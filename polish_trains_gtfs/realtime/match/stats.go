@@ -16,3 +16,9 @@ func (s Stats) String() string {
 	percentMatched := 100 * float64(s.Matched) / float64(total)
 	return fmt.Sprintf("matched %d / %d (%.2f %%), rejected %d outside of feed dates", s.Matched, total, percentMatched, s.OutsideFeedDates)
 }
+
+func (s *Stats) Add(o Stats) {
+	s.Matched += o.Matched
+	s.Unmatched += o.Unmatched
+	s.OutsideFeedDates += o.OutsideFeedDates
+}
