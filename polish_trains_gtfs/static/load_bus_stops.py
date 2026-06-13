@@ -37,9 +37,12 @@ class BusStop:
     lat: float = 0.0
     lon: float = 0.0
     direction_hints: list[str] = field(default_factory=list[str])
+    towards: list[str] = field(default_factory=list[str])
 
     @property
     def gtfs_id(self) -> str:
+        if self.towards != []:
+            return f"{self.station_id}_BUS_{self.towards[0]}"
         if self.direction_hints == [] or self.direction_hints == ["*"]:
             return f"{self.station_id}_BUS"
         return f"{self.station_id}_BUS_{self.direction_hints[0]}"
@@ -65,6 +68,8 @@ class PLRailMapBusStopLoader(XmlSaxContentHandler):
                 self.current_stop.station_id = attrs["v"]
             elif attrs["k"] == "direction" and attrs["v"]:
                 self.current_stop.direction_hints = attrs["v"].split(";")
+            elif attrs["k"] == "towards" and attrs["v"]:
+                self.current_stop.towards = attrs["v"].split(";")
 
     def endElement(self, name: str) -> None:
         if name == "node":
@@ -279,6 +284,9 @@ class GeoTripMatcher:
         self.stop_id_by_hint = {
             hint: stop.gtfs_id for stop in bus_stops for hint in stop.direction_hints
         }
+        self.stop_id_by_towards = {
+            towards: stop.gtfs_id for stop in bus_stops for towards in stop.towards
+        }
         self.match_cache = dict[tuple[str | None, str, str | None], str]()
         self.used_ids = set[str]()
 
@@ -287,7 +295,9 @@ class GeoTripMatcher:
         curr_id = trip.stop_times[stop_time_offset].id
         next_id = st.id if (st := list_get(trip.stop_times, stop_time_offset + 1)) else None
 
-        if (replacement_id := self.match_cache.get((prev_id, curr_id, next_id))) is None:
+        if (
+            replacement_id := self.match_cache.get((prev_id, curr_id, next_id))
+        ) is None:
             replacement_id = self.match_inner(prev_id, curr_id, next_id)
             self.match_cache[(prev_id, curr_id, next_id)] = replacement_id
             self.used_ids.add(replacement_id)
@@ -300,6 +310,9 @@ class GeoTripMatcher:
 
         if star_id := self.stop_id_by_hint.get("*"):
             return star_id
+
+        if next_id and (towards_id := self.stop_id_by_towards.get(next_id)):
+            return towards_id
 
         trip_bearing = self.calc_bearing(prev_id, curr_id, next_id)
         closest_hint = min(
