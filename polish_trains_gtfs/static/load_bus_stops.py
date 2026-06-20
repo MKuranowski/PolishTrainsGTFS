@@ -5,6 +5,7 @@ from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import groupby
+from math import inf
 from operator import itemgetter
 from statistics import mean
 from typing import Self, cast
@@ -14,7 +15,7 @@ from xml.sax.xmlreader import AttributesImpl as XmlSaxAttributes
 
 from impuls import DBConnection, Task, TaskRuntime
 from impuls.model import Stop
-from impuls.tools.geo import initial_bearing
+from impuls.tools.geo import earth_distance_m, initial_bearing
 from impuls.tools.types import StrPath
 
 from .util import json
@@ -256,12 +257,23 @@ class LoadBusStops(Task):
                 ),
             )
         elif len(new_stops) > 1:
-            lat = round(mean(i.lat for i in new_stops), 6)
-            lon = round(mean(i.lon for i in new_stops), 6)
-            db.raw_execute(
-                "UPDATE stops SET lat = ?, lon = ?, location_type = 1 WHERE stop_id = ?",
-                (lat, lon, station_id),
-            )
+            # Move the station location only if the bus stops are not spread geographically.
+            # When they are spread apart quite far, the station pin is likely to land in the
+            # middle of nowhere, in some very random place. It's better to keep it at the original
+            # station's location.
+            if bbox_diagonal_dist(new_stops) <= 500:
+                lat = round(mean(i.lat for i in new_stops), 6)
+                lon = round(mean(i.lon for i in new_stops), 6)
+                db.raw_execute(
+                    "UPDATE stops SET lat = ?, lon = ?, location_type = 1 WHERE stop_id = ?",
+                    (lat, lon, station_id),
+                )
+            else:
+                db.raw_execute(
+                    "UPDATE stops SET location_type = 1 WHERE stop_id = ?",
+                    (station_id,),
+                )
+
             db.raw_execute_many(
                 "INSERT INTO stops (stop_id,name,lat,lon,parent_station) VALUES (?,?,?,?,?)",
                 ((i.gtfs_id, existing_stop.name, i.lat, i.lon, station_id) for i in new_stops),
@@ -348,6 +360,24 @@ def has_train_departures(db: DBConnection, stop_id: str) -> bool:
         (stop_id,),
     ) as q:
         return q.one() is not None
+
+
+def bbox_diagonal_dist(stops: Iterable[BusStop]) -> float:
+    min_lat = inf
+    min_lon = inf
+    max_lat = -inf
+    max_lon = -inf
+
+    for stop in stops:
+        min_lat = min(min_lat, stop.lat)
+        min_lon = min(min_lon, stop.lon)
+        max_lat = max(max_lat, stop.lat)
+        max_lon = max(max_lon, stop.lon)
+
+    if min_lat == inf:
+        return 0  # no stops
+
+    return earth_distance_m(min_lat, min_lon, max_lat, max_lon)
 
 
 def list_get[T, U](seq: Sequence[T], idx: int, default: U = None) -> T | U:
