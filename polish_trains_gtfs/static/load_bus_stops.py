@@ -41,11 +41,11 @@ class BusStop:
 
     @property
     def gtfs_id(self) -> str:
-        if self.towards != []:
+        if self.direction_hints and self.direction_hints != ["*"]:
+            return f"{self.station_id}_BUS_{self.direction_hints[0]}"
+        if self.towards:
             return f"{self.station_id}_BUS_{self.towards[0]}"
-        if self.direction_hints == [] or self.direction_hints == ["*"]:
-            return f"{self.station_id}_BUS"
-        return f"{self.station_id}_BUS_{self.direction_hints[0]}"
+        return f"{self.station_id}_BUS"
 
     def __bool__(self) -> bool:
         return self.station_id != "" and self.lat != 0.0 and self.lon != 0.0
