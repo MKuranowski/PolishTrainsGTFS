@@ -295,24 +295,22 @@ class GeoTripMatcher:
         curr_id = trip.stop_times[stop_time_offset].id
         next_id = st.id if (st := list_get(trip.stop_times, stop_time_offset + 1)) else None
 
-        if (
-            replacement_id := self.match_cache.get((prev_id, curr_id, next_id))
-        ) is None:
+        if (replacement_id := self.match_cache.get((prev_id, curr_id, next_id))) is None:
             replacement_id = self.match_inner(prev_id, curr_id, next_id)
             self.match_cache[(prev_id, curr_id, next_id)] = replacement_id
             self.used_ids.add(replacement_id)
         return StopUpdate.for_trip(trip, stop_time_offset, replacement_id)
 
     def match_inner(self, prev_id: str | None, curr_id: str, next_id: str | None) -> str:
+        if next_id and (towards_id := self.stop_id_by_towards.get(next_id)):
+            return towards_id
+
         terminates = not prev_id or not next_id
         if terminates and (terminus_id := self.stop_id_by_hint.get("T")):
             return terminus_id
 
         if star_id := self.stop_id_by_hint.get("*"):
             return star_id
-
-        if next_id and (towards_id := self.stop_id_by_towards.get(next_id)):
-            return towards_id
 
         trip_bearing = self.calc_bearing(prev_id, curr_id, next_id)
         closest_hint = min(
