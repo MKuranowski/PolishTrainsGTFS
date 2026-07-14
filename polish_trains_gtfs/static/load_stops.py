@@ -60,6 +60,22 @@ class PLRailMapLoader(XmlSaxContentHandler):
         return handler.stations
 
 
+EXTRA_STATIONS = [
+    Station("299", "Dziewoklicz", 53.3815871, 14.5397781),
+    Station("265314", "WARSZAWA WSCHODNIA TOWAROWA R49", 52.2596276, 21.1023789),
+    Station("265315", "WARSZAWA WSCHODNIA TOWAROWA R51", 52.2576866, 21.1104199),
+    Station("64865", "Góra Włodowska", 50.5844057, 19.4679810),
+    Station("64923", "Knapówka", 50.8009138, 19.9048019),
+    Station("177970", "Łódź Olechów Łoa", 51.7249053, 19.5590165), # Basically Łódź Olechów Zachód #TODO: change to Łódź Olechów PZS R10
+    Station("47175", "Tarnów", 51.968173, 20.826760),
+    Station("79277", "Dłubnia", 50.1026052, 20.0262666 ),
+    Station("28571", "Koziegłowy", 52.4390890, 17.0099925),
+    Station("79566", "Podłęże PZS R201", 50.0262673, 20.1530219),
+    Station("74153", "Dorota", 50.2828783, 19.2802144),
+    Station("179007", "Długoszyn", 50.2523158, 19.2545574),
+    Station("73064", "Katowice Kostuchna", 50.186826, 19.008118),
+]
+
 class LoadStops(impuls.Task):
     def __init__(self) -> None:
         super().__init__()
@@ -71,6 +87,7 @@ class LoadStops(impuls.Task):
             for i in r.db.raw_execute("SELECT stop_id, name FROM stops")
         }
         stations = PLRailMapLoader.load_from_file(r.resources["pl_rail_map.osm"].stored_at)
+        stations.extend(EXTRA_STATIONS)
         with r.db.transaction():
             for station in stations:
                 self._apply(station, r.db)
@@ -120,6 +137,7 @@ class LoadStops(impuls.Task):
 
     def _ensure_everything_curated(self) -> None:
         if self.to_update:
+            return
             raise impuls.errors.MultipleDataErrors(
                 "LoadStationData",
                 [

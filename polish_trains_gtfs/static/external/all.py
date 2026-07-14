@@ -6,10 +6,11 @@ from typing import Type
 
 from impuls import Resource
 
+from .ic_kpd import LoadICKPD
 from .km import LoadKM
 from .task import LoadExternal
 
-ALL: Sequence[Type[LoadExternal]] = [LoadKM]
+ALL: Sequence[Type[LoadExternal]] = [LoadKM, LoadICKPD]
 
 
 def get_resources() -> dict[str, Resource]:
