@@ -1,6 +1,7 @@
 import csv
 import difflib
 from typing import List, Optional, Tuple, Set, NamedTuple, Any, TypedDict, cast
+import json
 
 
 from ..util.apikey import get_apikey
@@ -12,7 +13,7 @@ from itertools import groupby
 from operator import itemgetter
 
 from impuls import LocalResource, Task, TaskRuntime
-from impuls.model import Trip, CalendarException, Stop
+from impuls.model import StopTime, Trip, CalendarException, Stop
 from impuls.errors import InputNotModified
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 from impuls.tools.types import StrPath
@@ -139,7 +140,6 @@ class LoadICKPD(LoadExternal):
                     )
                     all_stops.add(stop_id)
 
-
         rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, non_pax_important_stops)
 
         kpd_lookup = build_kpd_lookup(rows)
@@ -229,16 +229,8 @@ class LoadICKPD(LoadExternal):
                                 plk.drop_off_type if plk else 1,
                                 plk.stop_headsign if plk else "",
                                 plk.shape_dist_traveled if plk else None,
-                                (
-                                    plk.platform
-                                    if plk and plk.platform
-                                    else (
-                                        normalize_platform(kpd.departure_platform)
-                                        if kpd
-                                        else ""
-                                    )
-                                ),
-                                plk.extra_fields_json if plk else None,
+                                merge_platform(plk, kpd),
+                                merge_extra_fields(plk, kpd),
                             )
                             for i, (stop_id, plk, kpd) in enumerate(filtered)
                         ],
@@ -252,6 +244,33 @@ class LoadICKPD(LoadExternal):
                         f"Stops for trip {trip.id} / {main_number}: {filtered}"
                     )
                     continue
+
+
+def merge_platform(plk: PLKStop | None, kpd: KPDStop | None):
+    if plk and plk.platform:
+        return plk.platform
+
+    if kpd:
+        return normalize_platform(kpd.departure_platform)
+
+    return ""
+
+
+def merge_extra_fields(plk: PLKStop | None, kpd: KPDStop | None):
+    """
+    Add track number when it's missing in plk data
+    """
+    if not plk:
+        return None
+
+    if plk.platform or not kpd:
+        # PLK data contains platform, so it also contains track
+        return plk.extra_fields_json
+
+    extra_fields = json.loads(plk.extra_fields_json or "{}")
+
+    extra_fields["track"] = kpd.departure_track
+    return json.dumps(extra_fields)
 
 
 def normalize_platform(x: str) -> str:
