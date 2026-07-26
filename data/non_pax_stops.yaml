@@ -9,6 +9,9 @@ stops:
   # Szczecin Dąbie - Szczecin Główny: Port Centralny vs Dziewoklicz
   - "299" # Dziewoklicz
   - "109" # Szczecin Port Centralny
+  # Warszawa Zachodnia
+  - "206261" # Warszawa Główna Towarowa GT 22-39
+  - "206262" # Warszawa Główna Towarowa GT 81-85
   # Warszawa Wschodnia - Otwock
   # Temporarilrly no trains run via this route
   # - "265314" # Warszawa Wschodnia Towarowa R49
@@ -27,6 +30,7 @@ stops:
   - "45245" # Kalisz
   - "46581" # Pabianice
   - "28571" # Koziegłowy (Poznań northern bypass)
+  - "18838" # Inowrocław Rąbinek
   # GOP
   - "73502" # Mysłowice
   - "74153" # Dorota
