@@ -1,0 +1,34 @@
+stops:
+  # Swarzędz - Poznań: Franowo vs Wschodni
+  - "28522" # Poznań Starołęka
+  # CMK vs other routes
+  - "64899" # Włoszczowa Północ
+  - "48959" # Opoczno Południe
+  - "64865" # Góra Włodowska
+  - "64923" # Knapówka
+  # Szczecin Dąbie - Szczecin Główny: Port Centralny vs Dziewoklicz
+  - "299" # Dziewoklicz
+  - "109" # Szczecin Port Centralny
+  # Warszawa Wschodnia - Otwock
+  # Temporarilrly no trains run via this route
+  # - "265314" # Warszawa Wschodnia Towarowa R49
+  # - "265315" # Warszawa Wschodnia Towarowa R51
+  # Trains from Pilawa to Warsaw via Mińsk Mazowiecki (skipping Otwock)
+  - "38729" # Sulejówek Miłosna
+  # Kraków: "Small Bypass" (to/via Płaszów but not via Główny)
+  - "80200" # Kraków Olsza
+  # Łódź: Łódź Widzew to Łódź Kaliska, without direction change
+  - "265209" # Łódź Olechów PZS R10 (basically Łódź Olechów Wiadukt)
+  # Niespieszny Trains
+  - "40345" # Góra Kalwaria
+  - "47175" # Tarczyn
+  - "79277" # Dłubnia (Kraków bypass)
+  - "79566" # Podgrabie / Podłęże PZS R201 (Kraków bypass)
+  - "45245" # Kalisz
+  - "46581" # Pabianice
+  - "28571" # Koziegłowy (Poznań northern bypass)
+  # GOP
+  - "73502" # Mysłowice
+  - "74153" # Dorota
+  - "179007" # Długoszyn
+  - "73064" # Katowice Kostuchna

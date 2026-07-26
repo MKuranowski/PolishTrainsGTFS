@@ -1,7 +1,6 @@
-import json
 import csv
 import difflib
-from typing import List, Optional, Tuple, Set
+from typing import List, Optional, Tuple, Set, NamedTuple, Any, TypedDict, cast
 
 
 from ..util.apikey import get_apikey
@@ -12,17 +11,86 @@ from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
 
-from impuls import TaskRuntime
+from impuls import LocalResource, Task, TaskRuntime
 from impuls.model import Trip, CalendarException, Stop
 from impuls.errors import InputNotModified
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 from impuls.tools.types import StrPath
 
 CSVRow = dict[str, str]
-TrainKey = tuple[str, str]  # Date, TrainNumber
 
 
-NON_PAX_FILTERED = []
+class TrainKey(NamedTuple):
+    date: str
+    train_number: str
+
+
+class KPDStop(NamedTuple):
+    stop_id: str
+    departure_platform: str
+    departure_track: str
+
+
+class PLKStop(NamedTuple):
+    stop_id: str
+    trip_id: str
+    stop_sequence: int
+    arrival_time: int
+    departure_time: int
+    pickup_type: int
+    drop_off_type: int
+    stop_headsign: str
+    shape_dist_traveled: Optional[float]
+    platform: str
+    extra_fields_json: Optional[str]
+
+
+KPDLookup = dict[str, dict[str, List[KPDStop]]]
+CalendarLookup = dict[str, List[str]]
+
+
+class CleanNonPaxStops(Task):
+    def execute(self, r: TaskRuntime):
+        with r.db.transaction():
+            r.db.raw_execute(
+                """
+                DELETE FROM stop_times
+                WHERE pickup_type = 1 and drop_off_type = 1
+                """
+            )
+
+            #renumber stop_sequence
+            r.db.raw_execute(
+                """
+                UPDATE stop_times
+                SET stop_sequence = stop_sequence + 10000
+                WHERE trip_id like "%IC%";
+                """
+            )
+            r.db.raw_execute(
+                """
+                WITH reordered AS (
+                    SELECT
+                        rowid AS rid,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY trip_id
+                            ORDER BY stop_sequence
+                        ) AS new_stop_sequence
+                    FROM stop_times
+                    WHERE trip_id like "%IC%"
+                )
+                UPDATE stop_times
+                SET stop_sequence = (
+                    SELECT new_stop_sequence
+                    FROM reordered
+                    WHERE reordered.rid = stop_times.rowid
+                )
+                WHERE trip_id like "%IC%";
+                """
+            )
+
+class Stops(TypedDict):
+    stops: list[str]
 
 class LoadICKPD(LoadExternal):
     def __init__(self):
@@ -42,7 +110,8 @@ class LoadICKPD(LoadExternal):
                         "ftps.intercity.pl",
                     ),
                     file_name_in_zip="KPD_Rozklad.csv",
-                )
+                ),
+                "non_pax_stops.yaml": LocalResource("data/non_pax_stops.yaml")
             }
         else:
             return {}
@@ -52,10 +121,14 @@ class LoadICKPD(LoadExternal):
             self.logger.warning(
                 "No IC KPD Rozklad resource available. Skipping execution."
             )
+            return
+
+        non_pax_important_stops = cast(Stops, r.resources["non_pax_stops.yaml"].yaml()).get("stops")
 
         with r.db.transaction():
-            for stop_id in NON_PAX_IMPORTANT_STOPS:
-                try:
+            all_stops = {stop.id for stop in r.db.retrieve_all(Stop).all()}
+            for stop_id in non_pax_important_stops:
+                if stop_id not in all_stops:
                     r.db.create(
                         Stop(
                             id=stop_id,
@@ -64,116 +137,67 @@ class LoadICKPD(LoadExternal):
                             lon=0.0,
                         )
                     )
-                except Exception as e:
-                    NON_PAX_FILTERED.append(stop_id)
-                    self.logger.error(
-                        f"Error occurred while creating stop {stop_id}: {e}"
-                    )
+                    all_stops.add(stop_id)
 
-        rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at)
-        # 1. parse
-        # parse structure: Map[CleanNumber, Map[Date, List[Stops]]]
 
-        parsed = {}  # CleanNumber -> Date -> List[Stops]
-        for (date, train_number), lines in rows:
-            clean_number = str(int(train_number.split("/")[0]) // 2 * 2)
-            stops: List[Tuple[str, str, str]] = []  # List of (stop_id, ..ExtraData)
-            for line in lines:
-                stop_id = line["NumerStacji"]
-                departure_platform = line["PeronWyjazd"]
-                if line["StacjaHandlowa"] != "1":
-                    departure_platform = "NO_PAX"
-                departure_track = line["TorWyjazd"]
-                stops.append((stop_id, departure_platform, departure_track))
-            parsed[clean_number] = parsed.get(clean_number, {})
-            parsed[clean_number][date] = stops
-        with open("parsed_kpd.json", "w", encoding="utf-8") as f:
-            json.dump(parsed, f, ensure_ascii=False, indent=4)
-        # 2. match
+        rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, non_pax_important_stops)
+
+        kpd_lookup = build_kpd_lookup(rows)
+
         trips = r.db.retrieve_all(Trip).all()
         calendar_dates = r.db.retrieve_all(CalendarException).all()
-        calendar_lookup = {
-            k: [v.date for v in g]
-            for k, g in groupby(calendar_dates, key=lambda c: c.calendar_id)
-        }
+        calendar_lookup = build_calendar_lookup(calendar_dates)
 
         for trip in trips:
             with r.db.transaction() as tx:
                 if "IC" not in trip.id:
                     continue
-                main_number, _, slash_number = trip.get_extra_field(
-                    "plk_train_number"
-                ).partition("/")
-                if slash_number:
-                    extra_number = main_number[:-1] + slash_number
-                else:
-                    main_int = int(main_number)
-                    if main_int % 2 == 0:
-                        extra_number = str(main_int + 1)
-                    else:
-                        extra_number = str(main_int - 1)
+                plk_number = trip.get_extra_field("plk_train_number")
+                if not plk_number:
+                    self.logger.warning("Trip %s has no plk_train_number", trip.id)
+                    continue
 
-                if main_number not in parsed:
-                    if extra_number in parsed:
+                main_number, extra_number = get_plk_train_numbers(plk_number)
+
+                if main_number not in kpd_lookup:
+                    if extra_number in kpd_lookup:
                         main_number = extra_number
                     else:
                         self.logger.warning(
-                            f"Train {main_number} not found in KPD Rozklad data."
+                            "Train %s not found in KPD Rozklad data.", main_number
                         )
                         continue
 
-                calendar_dates = calendar_lookup.get(trip.calendar_id, [])
-                if not calendar_dates:
+                calendar_dates_for_trip = calendar_lookup.get(trip.calendar_id, [])
+                if not calendar_dates_for_trip:
                     self.logger.warning(
-                        f"Trip {trip.id} has no calendar dates. Skipping."
+                        "Trip %s has no calendar dates. Skipping.", trip.id
                     )
                     continue
 
-                date = calendar_dates[0]
-                if str(date) not in parsed[main_number]:
-                    if len(calendar_dates) > 1:
-                        date = calendar_dates[1]
-                    if str(date) not in parsed[main_number]:
-                        self.logger.warning(
-                            f"Train {trip.id} / {main_number} has no stops in KPD for date {date}. Skipping."
-                        )
-                        continue
-                stops_from_kpd = parsed[main_number][str(date)]
-                raw_stops_from_plk = r.db.raw_execute(
-                    """
-                    SELECT stop_id, trip_id, stop_sequence, arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json
-                    FROM stop_times
-                    WHERE trip_id = ?
-                    ORDER BY stop_sequence
-                """,
-                    (trip.id,),
-                ).all()
+                date = next((d for d in calendar_dates_for_trip if d in kpd_lookup[main_number]), None)
+                if not date:
+                    self.logger.warning(
+                        f"Train {trip.id} / {main_number} has no stops in KPD for any of its active dates. Skipping."
+                    )
+                    continue
+                stops_from_kpd = kpd_lookup[main_number][date]
+                raw_stops_from_plk = [
+                    PLKStop(*cast(Tuple[Any, ...], row))
+                    for row in r.db.raw_execute(
+                        """
+                        SELECT stop_id, trip_id, stop_sequence, arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json
+                        FROM stop_times
+                        WHERE trip_id = ?
+                        ORDER BY stop_sequence
+                    """,
+                        (trip.id,),
+                    ).all()
+                ]
 
-                keys_plk = [v[0] for v in raw_stops_from_plk]
-                keys_kpd = [v[0] for v in stops_from_kpd]
-
-                combined: List[
-                    Tuple[str, Optional[Tuple[str]], Optional[Tuple[str]]]
-                ] = []  # stop_id, plk, kpd
-                diverging: Set[str] = set()
-
-                matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
-
-                for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-                    if tag == "equal":
-                        for plk, kpd in zip(
-                            raw_stops_from_plk[i1:i2], stops_from_kpd[j1:j2]
-                        ):
-                            combined.append((plk[0], plk, kpd))
-                    else:
-                        if tag in ("replace", "delete"):
-                            for k in raw_stops_from_plk[i1:i2]:
-                                combined.append((k[0], k, None))
-                                diverging.add(k[0])
-                        if tag in ("replace", "insert"):
-                            for k in stops_from_kpd[j1:j2]:
-                                combined.append((k[0], None, k))
-                                diverging.add(k[0])
+                combined, diverging = merge_stop_sequences(
+                    raw_stops_from_plk, stops_from_kpd
+                )
 
                 if not diverging:
                     continue
@@ -199,14 +223,22 @@ class LoadICKPD(LoadExternal):
                                 stop_id,
                                 trip.id,
                                 i + 1,
-                                plk[3] if plk else 0,  # arrival_time
-                                plk[4] if plk else 0,  # departure_time
-                                plk[5] if plk else 1,  # pickup_type
-                                plk[6] if plk else 1,  # drop_off_type
-                                plk[7] if plk else "",  # stop_headsign
-                                plk[8] if plk else None,  # shape_dist_traveled
-                                plk[9] if plk and plk[9] else normalize_platform(kpd[1]) if kpd else "",  # platform
-                                plk[10] if plk else None,  # extra_fields_json
+                                plk.arrival_time if plk else 0,
+                                plk.departure_time if plk else 0,
+                                plk.pickup_type if plk else 1,
+                                plk.drop_off_type if plk else 1,
+                                plk.stop_headsign if plk else "",
+                                plk.shape_dist_traveled if plk else None,
+                                (
+                                    plk.platform
+                                    if plk and plk.platform
+                                    else (
+                                        normalize_platform(kpd.departure_platform)
+                                        if kpd
+                                        else ""
+                                    )
+                                ),
+                                plk.extra_fields_json if plk else None,
                             )
                             for i, (stop_id, plk, kpd) in enumerate(filtered)
                         ],
@@ -216,13 +248,10 @@ class LoadICKPD(LoadExternal):
                     self.logger.error(
                         f"Error occurred while updating stop_times for trip {trip.id} / {main_number}: {e}, {e.args}"
                     )
-                    self.logger.debug(f"Stops for trip {trip.id} / {main_number}: {filtered}")
+                    self.logger.debug(
+                        f"Stops for trip {trip.id} / {main_number}: {filtered}"
+                    )
                     continue
-        # [WARNING 21:27:12.546] Task.LoadICKPD: Missing stops in database: {'
-        # 179301 - Мостиська IІ /Mostistka/' - nie występuje w PDP
-        # , '179215', - Horka, nie występuje w PDP
-        # '179193', - Jagodin, nie występuje w PDP
-        # '178501'} - Kępno "Górne", w KDP jako 45401
 
 
 def normalize_platform(x: str) -> str:
@@ -236,12 +265,90 @@ def normalize_platform(x: str) -> str:
     base = ROMAN_TO_ARABIC.get(base, base)
     return f"{base}{suffix}"
 
+
+def get_plk_train_numbers(plk_number: str) -> Tuple[str, str]:
+    """
+    Parses the PLK train number and returns a tuple of (main_number, extra_number).
+    """
+    main_number, _, slash_number = plk_number.partition("/")
+    if slash_number:
+        extra_number = main_number[:-1] + slash_number
+    else:
+        main_int = int(main_number)
+        if main_int % 2 == 0:
+            extra_number = str(main_int + 1)
+        else:
+            extra_number = str(main_int - 1)
+    return main_number, extra_number
+
+
+def merge_stop_sequences(
+    raw_stops_from_plk: List[PLKStop], stops_from_kpd: List[KPDStop]
+) -> Tuple[List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]], Set[str]]:
+    """
+    Merges PLK and KPD stop sequences and identifies diverging stop IDs.
+    """
+    keys_plk = [v.stop_id for v in raw_stops_from_plk]
+    keys_kpd = [v.stop_id for v in stops_from_kpd]
+
+    combined: List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]] = []
+    diverging: Set[str] = set()
+
+    matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
+
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            for plk, kpd in zip(raw_stops_from_plk[i1:i2], stops_from_kpd[j1:j2]):
+                combined.append((plk.stop_id, plk, kpd))
+        else:
+            if tag in ("replace", "delete"):
+                for k in raw_stops_from_plk[i1:i2]:
+                    combined.append((k.stop_id, k, None))
+                    diverging.add(k.stop_id)
+            if tag in ("replace", "insert"):
+                for k in stops_from_kpd[j1:j2]:
+                    combined.append((k.stop_id, None, k))
+                    diverging.add(k.stop_id)
+
+    return combined, diverging
+
+
+def build_kpd_lookup(rows: Iterator[Tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLookup:
+    """
+    Parses train rows from KPD CSV and builds a lookup mapping
+    clean train numbers to date, and date to a list of KPDStop.
+    """
+    parsed: KPDLookup = {}
+    for key, lines in rows:
+        clean_number = str(int(key.train_number.split("/")[0]) // 2 * 2)
+        stops: List[KPDStop] = []
+        for line in lines:
+            stop_id = line["NumerStacji"]
+            departure_platform = line["PeronWyjazd"]
+            if line["StacjaHandlowa"] != "1":
+                departure_platform = "NO_PAX"
+            departure_track = line["TorWyjazd"]
+            stops.append(KPDStop(stop_id, departure_platform, departure_track))
+        parsed.setdefault(clean_number, {})[key.date] = stops
+    return parsed
+
+
+def build_calendar_lookup(calendar_dates: List[CalendarException]) -> CalendarLookup:
+    """
+    Builds a lookup mapping calendar IDs to a list of dates (as strings).
+    """
+    lookup: CalendarLookup = {}
+    for entry in calendar_dates:
+        lookup.setdefault(entry.calendar_id, []).append(str(entry.date))
+    return lookup
+
+
 def ensure_start_and_end_at_pax_station(
-    stops: list[Tuple[str, Optional[Tuple[str, str]], Optional[Tuple[str, str]]]],
-) -> list[Tuple[str, Optional[Tuple[str, str]], Optional[Tuple[str, str]]]]:
+    stops: List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]],
+) -> List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]]:
     def is_no_pax(index: int) -> bool:
         kpd_stop = stops[index][2]
-        return kpd_stop is not None and kpd_stop[1] == "NO_PAX"
+        return kpd_stop is not None and kpd_stop.departure_platform == "NO_PAX"
 
     start = 0
     end = len(stops) - 1
@@ -255,26 +362,7 @@ def ensure_start_and_end_at_pax_station(
     return stops[start : end + 1]
 
 
-# PLK:
-# 0: stop_id,
-# 1: trip_id,
-# 2: stop_sequence,
-# 3: arrival_time,
-# 4: departure_time,
-# 5: pickup_type,
-# 6: drop_off_type,
-# 7: stop_headsign,
-# 8: shape_dist_traveled,
-# 9: platform,
-# 10: extra_fields_json
-
-# KDP:
-# 0: stop_id,
-# 1: departure_platform,
-# 2: departure_track
-
-
-def train_rows(filename: StrPath) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
+def train_rows(filename: StrPath, non_pax_important_stops: List[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
     # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
     #       For the past 5 years that was the case.
     with open(filename, "r", encoding="windows-1250", newline="") as f:
@@ -282,12 +370,13 @@ def train_rows(filename: StrPath) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]
         pax_rows = filter(
             lambda r: (
                 r["StacjaHandlowa"] == "1"
-                or r["NumerStacji"] in NON_PAX_FILTERED#NON_PAX_IMPORTANT_STOPS
+                or r["NumerStacji"] in non_pax_important_stops
             )
-            and r["NumerStacji"] not in ("179301", "179215", "179193", "178501"),
+            and r["NumerStacji"] not in IGNORED_STOPS,
             all_rows,
         )
-        yield from groupby(pax_rows, itemgetter("DataOdjazdu", "NrPociagu"))
+        for key, group in groupby(pax_rows, itemgetter("DataOdjazdu", "NrPociagu")):
+            yield TrainKey(*key), group
 
 
 class FTP_TLS_Patched(FTP_TLS):
@@ -347,44 +436,13 @@ class FTPResource(ConcreteResource):
             yield from ftp.iter_binary(f"RETR {self.filename}")
 
 
-# List of non pax stops that are important for routing
-# TODO: move to a yaml
-NON_PAX_IMPORTANT_STOPS = [
-    # Swarzędz - Poznań: Franowo vs Wschodni
-    "28522",  # Poznań Starołęka
-    # "29801", # Poznań Wschód - excluded, due to problematic location
-    # CMK vs other routes
-    "64899",  # Włoszczowa Północ
-    "48959",  # Opoczno Południe
-    "64865",  # Góra Włodowska
-    "64923",  # Knapówka
-    # Szczecin Dąbie - Szczecin Główny: Port Centralny vs Dziewoklicz
-    "299",  # Dziewoklicz
-    "109",  # Szczecin Port Centralny
-    # Warszawa Wschodnia - Otwock and Wołomin
-    "265314",  # Warszawa Wschodnia Towarowa R49
-    "265315",  # Warszawa Wschodnia Towarowa R51
-    # Kraków: "Small Bypass" (to/via Płaszów, not via Główny)
-    "80200",  # Kraków Olsza
-    # Łódż: Łódź Widzew to Łódź Kaliska, without direction change
-    "177970",  # Łódź Olechów Łoa
-    # LK12: Cargo bypass of Warsaw
-    "40345",  # Góra Kalwaria
-    "47175",  # Tarnów
-    # Trains from Pilawa to Warsaw via Mińsk Mazowiecki (skipping Otwock)
-    "38729",  # Sulejówek Miłosna
-    # Niespieszny Trains
-    "79277",  # Dłubnia (Kraków bypass)
-    "79566",  # Podgrabie / Podłęże PZS R201 (Kraków bypass)
-    "45245",  # Kalisz
-    "46581",  # Pabianice
-    "28571",  # Koziegłowy (Poznań northern bypass)
-    # GOP
-    "73502",  # Mysłowice
-    "74153",  # Dorota
-    "179007",  # Długoszyn
-    "73064",  # Katowice Kostuchna
-]
+# List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
+IGNORED_STOPS = (
+    "179301", # Мостиська IІ /Mostistka/' - not in PLK API
+    "179215", # Horka - technical station, not in PLK API
+    "179193", # Jagodin - not in PLK API
+    "178501", # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
+)
 
 ROMAN_TO_ARABIC = {
     "I": "1",
