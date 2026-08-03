@@ -12,11 +12,12 @@ WITH islands AS (
     SELECT
         trip_id,
         stop_sequence,
-        concat_ws(
-            ':',
-            trip_id,
-            stop_id,
-            (row_number() OVER trips - row_number() OVER trip_stops)
+        (
+            trip_id
+            || ':'
+            || stop_id
+            || ':'
+            || CAST((row_number() OVER trips - row_number() OVER trip_stops) AS VARCHAR)
         ) as run_id
     FROM stop_times
     WINDOW
