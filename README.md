@@ -137,9 +137,13 @@ External Data
 By providing the `-e`/`--external` flag to the static script, data for several routes
 will be pulled directly from operator APIs. Agency-provided datasets sometimes have
 higher-quality data, or PKP PLK API is straight up missing some routes
-(like the Modlin Airport shuttle bus). This requires providing extra access credentials:
+(like the Modlin Airport shuttle bus, or ŁKA's local feeder buses). Some sources
+require extra access credentials:
 
 - `KM_APIKEY` - Koleje Mazowieckie XML schedules apikey.
+
+Łódzka Kolej Aglomeracyjna's local buses are pulled from ŁKA's public GTFS and
+require no credentials.
 
 
 License

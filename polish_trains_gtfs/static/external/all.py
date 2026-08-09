@@ -7,9 +7,10 @@ from typing import Type
 from impuls import Resource
 
 from .km import LoadKM
+from .lka import LoadLKA
 from .task import LoadExternal
 
-ALL: Sequence[Type[LoadExternal]] = [LoadKM]
+ALL: Sequence[Type[LoadExternal]] = [LoadKM, LoadLKA]
 
 
 def get_resources() -> dict[str, Resource]:
@@ -19,5 +20,11 @@ def get_resources() -> dict[str, Resource]:
     return r
 
 
-def get_tasks() -> list[LoadExternal]:
-    return [s() for s in ALL]
+def get_early_tasks() -> list[LoadExternal]:
+    """External loaders that run before LoadStops (PLRailMap-curated stops)."""
+    return [s() for s in ALL if not s.runs_after_stop_curation]
+
+
+def get_late_tasks() -> list[LoadExternal]:
+    """External loaders that run after LoadBusStops (self-contained stops)."""
+    return [s() for s in ALL if s.runs_after_stop_curation]

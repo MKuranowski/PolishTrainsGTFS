@@ -132,10 +132,12 @@ class PolishTrainsGTFS(App):
 
         if args.external:
             external_resources = external.get_resources()
-            external_tasks = external.get_tasks()
+            external_early = external.get_early_tasks()
+            external_late = external.get_late_tasks()
         else:
             external_resources = {}
-            external_tasks = []
+            external_early = []
+            external_late = []
 
         return Pipeline(
             options=options,
@@ -157,7 +159,7 @@ class PolishTrainsGTFS(App):
             },
             tasks=[
                 LoadSchedules(),
-                *external_tasks,
+                *external_early,
                 ExecuteSQL(
                     statement="DELETE FROM agencies WHERE agency_id IN ('WKD', 'ODEG')",
                     task_name="DropUnusedAgencies",
@@ -226,6 +228,11 @@ class PolishTrainsGTFS(App):
                 SplitBusLegs(),
                 RemoveUnusedEntities(),
                 LoadBusStops(),
+                # Self-contained external networks that carry their own stop
+                # coordinates are injected here, after LoadStops' rail-station
+                # curation (which would otherwise reject them for being absent
+                # from PLRailMap). See LoadExternal.runs_after_stop_curation.
+                *external_late,
                 ExecuteSQL(
                     statement=(
                         "UPDATE stops SET extra_fields_json = json_set("
