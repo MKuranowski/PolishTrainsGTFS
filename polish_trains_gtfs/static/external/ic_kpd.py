@@ -1,7 +1,7 @@
 import csv
 import difflib
 from collections import defaultdict
-from typing import NamedTuple, TypedDict, cast
+from typing import NamedTuple, cast
 
 
 from ..util.apikey import get_apikey
@@ -36,7 +36,7 @@ KPDLookup = defaultdict[str, dict[str, list[KPDStop]]]
 CalendarLookup = defaultdict[str, list[str]]
 
 
-class CleanNonPaxStops(Task):
+class CleanWaypoints(Task):
     def execute(self, r: TaskRuntime):
         with r.db.transaction():
             r.db.raw_execute(
@@ -76,9 +76,6 @@ class CleanNonPaxStops(Task):
                 """
             )
 
-class Stops(TypedDict):
-    stops: list[str]
-
 class LoadICKPD(LoadExternal):
     def __init__(self):
         super().__init__()
@@ -98,7 +95,7 @@ class LoadICKPD(LoadExternal):
                     ),
                     file_name_in_zip="KPD_Rozklad.csv",
                 ),
-                "non_pax_stops.yaml": LocalResource("data/non_pax_stops.yaml")
+                "waypoints.yaml": LocalResource("data/waypoints.yaml")
             }
         else:
             return {}
@@ -110,23 +107,23 @@ class LoadICKPD(LoadExternal):
             )
             return
 
-        non_pax_important_stops = cast(Stops, r.resources["non_pax_stops.yaml"].yaml()).get("stops")
+        important_waypoints = {cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]}
 
         with r.db.transaction():
             all_stops = {stop.id for stop in r.db.retrieve_all(Stop).all()}
-            for stop_id in non_pax_important_stops:
+            for stop_id in important_waypoints:
                 if stop_id not in all_stops:
                     r.db.create(
                         Stop(
                             id=stop_id,
-                            name=f"Non-Pax Important Stop {stop_id}",
+                            name=f"Waypoint {stop_id}",
                             lat=0.0,
                             lon=0.0,
                         )
                     )
                     all_stops.add(stop_id)
 
-        rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, non_pax_important_stops)
+        rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, important_waypoints)
 
         kpd_lookup = build_kpd_lookup(rows)
 
@@ -316,7 +313,7 @@ def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
             stop_id = line["NumerStacji"]
             departure_platform = line["PeronWyjazd"]
             if line["StacjaHandlowa"] != "1":
-                departure_platform = "NO_PAX"
+                departure_platform = "WAYPOINT"
             departure_track = line["TorWyjazd"]
             stops.append(KPDStop(stop_id, departure_platform, departure_track))
         parsed[clean_number][key.date] = stops
@@ -336,23 +333,23 @@ def build_calendar_lookup(calendar_dates: list[CalendarException]) -> CalendarLo
 def ensure_start_and_end_at_pax_station(
     stops: list[tuple[str, StopTime | None, KPDStop | None]],
 ) -> list[tuple[str, StopTime | None, KPDStop | None]]:
-    def is_no_pax(index: int) -> bool:
+    def is_waypoint(index: int) -> bool:
         kpd_stop = stops[index][2]
-        return kpd_stop is not None and kpd_stop.departure_platform == "NO_PAX"
+        return kpd_stop is not None and kpd_stop.departure_platform == "WAYPOINT"
 
     start = 0
     end = len(stops) - 1
 
-    while start <= end and is_no_pax(start):
+    while start <= end and is_waypoint(start):
         start += 1
 
-    while end >= start and is_no_pax(end):
+    while end >= start and is_waypoint(end):
         end -= 1
 
     return stops[start : end + 1]
 
 
-def train_rows(filename: StrPath, non_pax_important_stops: list[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
+def train_rows(filename: StrPath, important_waypoints: set[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
     # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
     #       For the past 5 years that was the case.
     with open(filename, "r", encoding="windows-1250", newline="") as f:
@@ -360,7 +357,7 @@ def train_rows(filename: StrPath, non_pax_important_stops: list[str]) -> Iterato
         pax_rows = filter(
             lambda r: (
                 r["StacjaHandlowa"] == "1"
-                or r["NumerStacji"] in non_pax_important_stops
+                or r["NumerStacji"] in important_waypoints
             )
             and r["NumerStacji"] not in IGNORED_STOPS,
             all_rows,
@@ -447,5 +444,5 @@ ROMAN_TO_ARABIC = {
     "X": "10",
     "XI": "11",
     "XII": "12",
-    "NO_PAX": "NO_PAX",
+    "WAYPOINT": "WAYPOINT",
 }

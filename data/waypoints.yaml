@@ -1,4 +1,4 @@
-stops:
+waypoints:
   # Swarzędz - Poznań: Franowo vs Wschodni
   - "28522" # Poznań Starołęka
   # CMK vs other routes

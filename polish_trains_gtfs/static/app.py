@@ -11,7 +11,7 @@ from impuls.tasks import AddEntity, ExecuteSQL, GenerateTripHeadsign, RemoveUnus
 from . import external
 from .add_train_names import AddTrainNames
 from .assign_direction_id import AssignDirectionID
-from .external.ic_kpd import CleanNonPaxStops
+from .external.ic_kpd import CleanWaypoints
 from .curate_routes import CurateRoutes
 from .extract_routes import ExtractRoutes
 from .generate_shapes import GenerateBusShapes, GenerateShapes
@@ -239,7 +239,7 @@ class PolishTrainsGTFS(App):
                 ),
                 GenerateShapes("pl_rail_map.osm", "shapes.yaml"),
                 GenerateBusShapes("pl_rail_map.osm"),
-                CleanNonPaxStops(),
+                CleanWaypoints(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
