@@ -3,4 +3,7 @@
 
 from .task import GenerateBusShapes, GenerateShapes
 
-__all__ = ["GenerateShapes", "GenerateBusShapes"]
+__all__ = [
+    "GenerateBusShapes",
+    "GenerateShapes",
+]

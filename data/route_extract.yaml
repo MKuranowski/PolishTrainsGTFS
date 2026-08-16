@@ -6,15 +6,67 @@ KS:
         - {name: 'ESKO S7'}
     - route_code: "S1"
       select:
-        - {number: '44202'}
-    - route_code: "S5"
+        - {number: '44212'}
+        - {number: '44214'}
+    - route_code: "S4"
       select:
-        - {number: '44051'}
-        - {number: '44054'}
-        - {number: '44323'}
-    - route_code: "S6"
+        - {number: '44217'}
+        - {number: '44781'}
+    - route_code: "S7"
       select:
-        - {number: '446008'}
+        - {number: '44357'}
+        - {number: '44359'}
+        - {number: '44361'}
+        - {number: '44363'}
+        - {number: '44365'}
+        - {number: '44367'}
+        - {number: '44369'}
+        - {number: '44371'}
+        - {number: '44373'}
+        - {number: '44375'}
+        - {number: '44377'}
+        - {number: '44379'}
+        - {number: '44381'}
+        - {number: '44383'}
+        - {number: '44385'}
+        - {number: '44448'}
+        - {number: '44452'}
+        - {number: '44458'}
+        - {number: '44464'}
+        - {number: '44466'}
+        - {number: '44474'}
+        - {number: '44478'}
+        - {number: '44482'}
+        - {number: '44484'}
+        - {number: '44488'}
+        - {number: '44490'}
+        - {number: '44492'}
+        - {number: '44494'}
+        - {number: '44496'}
+        - {number: '44498'}
+        - {number: '44500'}
+        - {number: '44502'}
+        - {number: '44510'}
+        - {number: '44514'}
+        - {number: '44517'}
+        - {number: '44521'}
+        - {number: '44537'}
+        - {number: '44541'}
+        - {number: '44543'}
+        - {number: '44545'}
+        - {number: '44547'}
+        - {number: '44549'}
+        - {number: '44557'}
+        - {number: '44561'}
+        - {number: '44565'}
+        - {number: '44569'}
+        - {number: '44579'}
+        - {number: '44583'}
+        - {number: '44587'}
+        - {number: '44589'}
+        - {number: '44591'}
+        - {number: '44593'}
+        - {number: '44595'}
     - route_code: '\1'
       select: [{name: '/(S[0-9]{1,2})'}]
     - route_code: '\1'
@@ -237,5 +289,36 @@ PR:
   routes:
     - route_code: '\1'
       select: [{name: '^(PKM[0-9])$'}]
+    - route_code: ''
+      select: [{retain: true}]
+
+KM:
+  routes:
+    - route_code: 'R1'
+      select:
+        - {number: '11252/3'}
+    - route_code: 'R2'
+      select:
+        - {number: '11246'}
+        - {number: '19251'}
+    - route_code: 'R3'
+      select:
+        - {number: '19226/7'}
+        - {number: '19226/7'}
+    - route_code: 'R7'
+      select:
+        - {number: '11238'}
+        - {number: '11240'}
+        - {number: '11242'}
+        - {number: '11244'}
+        - {number: '11248/9'}
+        - {number: '11250/1'}
+        - {number: '19203'}
+        - {number: '19213'}
+        - {number: '19215'}
+        - {number: '19217'}
+        - {number: '19228'}
+        - {number: '19242'}
+        - {number: '19248/9'}
     - route_code: ''
       select: [{retain: true}]

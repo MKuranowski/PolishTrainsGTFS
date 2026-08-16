@@ -22,7 +22,7 @@ class BusRouteCuration(TypedDict):
 class SplitBusLegs(SplitTripLegs):
     def __init__(self, r: str = "bus_routes.yaml") -> None:
         super().__init__(
-            replacement_bus_short_name_pattern=re.compile(r"\bZKA\b", re.I),
+            replacement_bus_short_name_pattern=re.compile(r"\bZKA\b", re.IGNORECASE),
             leg_trip_id_infix="_LEG",
         )
         self.r = r
@@ -78,6 +78,8 @@ class SplitBusLegs(SplitTripLegs):
         new.departure_time = new.arrival_time
 
         if previous_data:
+            station_id, _, _ = stop_time.stop_id.partition("_")
+            new.stop_id = f"{station_id}_FALLBACK"
             new.platform = "BUS"
             extra["track"] = ""
         else:
@@ -93,6 +95,8 @@ class SplitBusLegs(SplitTripLegs):
         new.arrival_time = new.departure_time
 
         if current_data:
+            station_id, _, _ = stop_time.stop_id.partition("_")
+            new.stop_id = f"{station_id}_FALLBACK"
             new.platform = "BUS"
             extra["track"] = ""
         elif new.platform == "BUS":

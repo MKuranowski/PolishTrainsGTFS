@@ -172,7 +172,7 @@ func getDetourStopTimeUpdates(stops []*source.OperationTrainStop, canonicalStops
 		if stopID != "" && !stop.Cancelled {
 			updates = append(updates, &fact.StopTimeUpdate{
 				Sequence:  idx,
-				StopID:    stopID,
+				StopID:    stopID + "_FALLBACK",
 				Arrival:   time.Time(stop.LiveArrival),
 				Departure: time.Time(stop.LiveDeparture),
 				Confirmed: stop.Confirmed,

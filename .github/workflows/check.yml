@@ -1,0 +1,45 @@
+name: Check
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        uses: astral-sh/ruff-action@v4.1.0
+        with:
+          src: "./polish_trains_gtfs"
+
+      - name: Type Check
+        if: ${{ !cancelled() }}
+        uses: jakebailey/pyright-action@v3
+        with:
+          pylance-version: latest-release
+          extra-args: "./polish_trains_gtfs"
+
+      - name: Validate data/geo.osm
+        if: ${{ !cancelled() }}
+        run: python -m polish_trains_gtfs.geo.validate
+
+      - name: Stabilize data/geo.osm
+        if: ${{ !cancelled() }}
+        run: python -m polish_trains_gtfs.geo.stabilize --check

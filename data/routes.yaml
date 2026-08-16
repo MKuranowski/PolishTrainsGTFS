@@ -853,6 +853,6 @@ agencies:
         color: "008AD0"
       - id: "SKMT_S1"
         short_name: "S1"
-        match: [{short_name: "*S2*"}]
+        match: [{short_name: "*S2*"}, {short_name: "*R22*"}]
         long_name: "Gdańsk Śródmieście — Gdynia Cisowa (— Wejherowo — Lębork)"
         color: "008AD0"

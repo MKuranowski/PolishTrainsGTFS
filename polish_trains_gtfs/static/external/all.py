@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Sequence
-from typing import Type
 
 from impuls import Resource
 
@@ -10,7 +9,7 @@ from .ic_kpd import LoadICKPD
 from .km import LoadKM
 from .task import LoadExternal
 
-ALL: Sequence[Type[LoadExternal]] = [LoadKM, LoadICKPD]
+ALL: Sequence[type[LoadExternal]] = [LoadKM, LoadICKPD]
 
 
 def get_resources() -> dict[str, Resource]:

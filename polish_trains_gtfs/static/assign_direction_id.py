@@ -152,7 +152,9 @@ class _QueueItem:
     @classmethod
     def from_db(cls, trip_id: str, db: DBConnection) -> Self:
         with db.raw_execute(
-            "SELECT stop_id FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence ASC",
+            "SELECT coalesce(parent_station, stop_id) "
+            "FROM stop_times JOIN stops USING (stop_id) "
+            "WHERE trip_id = ? ORDER BY stop_sequence ASC",
             (trip_id,),
         ) as query:
             return cls(trip_id, (cast(str, i[0]) for i in query))
@@ -162,12 +164,12 @@ def _trips_of_config(db: DBConnection, c: Config) -> Iterable[str]:
     routes = list[str]()
 
     # First, transform all agency_ids into routes
-    for agency_id in c.get("agencies", tuple()):
+    for agency_id in c.get("agencies", ()):
         with db.raw_execute("SELECT route_id FROM routes WHERE agency_id = ?", (agency_id,)) as q:
             routes.extend(cast(str, r[0]) for r in q)
 
     # Second, add all explicit routes
-    routes.extend(c.get("routes", tuple()))
+    routes.extend(c.get("routes", ()))
 
     # Third, generate trip_ids
     for route_id in routes:

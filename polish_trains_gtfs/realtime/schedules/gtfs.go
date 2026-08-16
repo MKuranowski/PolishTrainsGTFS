@@ -387,11 +387,12 @@ func LoadGTFSStopTimes(stopTimes io.Reader, tripIDs map[string][]TripID, tripObj
 			continue
 		}
 
-		// Get a canonical stop_id
+		// Get a canonical stop_id, without platform data
 		st.StopID = row["stop_id"]
 		if st.StopID == "" {
 			return ErrGTFSInvalidValue{"stop_times.txt", "stop_id", r.Line(), nil}
 		}
+		st.StopID, _, _ = strings.Cut(st.StopID, "_")
 		if override := canonicalStops[st.StopID]; override != "" {
 			st.StopID = override
 		}

@@ -225,9 +225,9 @@ class LoadSchedules(Task):
         if (plk_stop_type := s.get("sti")) is not None:
             extra_fields["plk_stop_type"] = str(plk_stop_type)
 
-            if plk_stop_type == 1: # pickup only
+            if plk_stop_type == 1:  # pickup only
                 drop_off_type = 1
-            elif plk_stop_type == 2: # drop off only
+            elif plk_stop_type == 2:  # drop off only
                 pickup_type = 1
 
         db.raw_execute(
@@ -315,7 +315,7 @@ class LoadSchedules(Task):
             return route["ccs"]
 
     def get_trip_id(self, agency_id: str, schedule_id: str, order_id: str) -> str:
-        base = "_".join(("PLK", agency_id, schedule_id, order_id))
+        base = f"PLK_{agency_id}_{schedule_id}_{order_id}"
         id = find_non_conflicting_id(self.used_trip_ids, base, "_")
         if id != base:
             self.logger.warning("Non-unique trip_id: %s", base)

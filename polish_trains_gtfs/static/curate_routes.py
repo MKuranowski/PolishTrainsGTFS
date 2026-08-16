@@ -52,12 +52,14 @@ class RouteMatcher:
         self.id = self._compile(id, case_sensitive, regex)
         self.short_name = self._compile(short_name, case_sensitive, regex)
 
+    def route_mismatch(self, r: Route) -> bool:
+        return self.id is not None and not self.id.fullmatch(r.id)
+
+    def short_name_mismatch(self, r: Route) -> bool:
+        return self.short_name is not None and not self.short_name.fullmatch(r.id)
+
     def matches(self, r: Route) -> bool:
-        if self.id and not self.id.fullmatch(r.id):
-            return False
-        elif self.short_name and not self.short_name.fullmatch(r.short_name):
-            return False
-        return True
+        return not (self.route_mismatch(r) or self.short_name_mismatch(r))
 
     @staticmethod
     def _compile(
@@ -69,7 +71,7 @@ class RouteMatcher:
             return None
         elif not regex:
             pat = fnmatch.translate(pat)
-        return re.compile(pat, flags=(re.I if case_sensitive else 0))
+        return re.compile(pat, flags=(re.IGNORECASE if case_sensitive else 0))
 
 
 class CurateRoutes(Task):

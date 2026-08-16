@@ -6,18 +6,20 @@ from typing import cast
 
 from impuls import App, HTTPResource, LocalResource, Pipeline, PipelineOptions
 from impuls.model import Date, Stop
-from impuls.tasks import AddEntity, ExecuteSQL, GenerateTripHeadsign, RemoveUnusedEntities, SaveGTFS
+from impuls.tasks import AddEntity, ExecuteSQL, GenerateTripHeadsign, SaveGTFS
 
 from . import external
 from .add_train_names import AddTrainNames
 from .assign_direction_id import AssignDirectionID
 from .external.ic_kpd import CleanWaypoints
 from .curate_routes import CurateRoutes
+from .deduplicate_consecutive_times import DeduplicateConsecutiveTimes
 from .extract_routes import ExtractRoutes
 from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
-from .load_stops import LoadStops
+from .load_stations import LoadStations
+from .remove_unused_entities import RemoveUnusedEntities
 from .shift_negative_times import ShiftNegativeTimes
 from .split_bus_legs import SplitBusLegs
 from .util.apikey import get_apikey
@@ -61,13 +63,17 @@ GTFS_HEADERS = {
     "stops.txt": (
         "stop_id",
         "stop_name",
+        "platform_code",
         "stop_lat",
         "stop_lon",
         "location_type",
         "parent_station",
         "stop_timezone",
+        "wheelchair_boarding",
+        "stop_access",
         "country",
         "plk_secondary_id",
+        "only_platforms",
     ),
     "stop_times.txt": (
         "trip_id",
@@ -146,9 +152,7 @@ class PolishTrainsGTFS(App):
                     headers={"X-Api-Key": apikey},
                     params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
                 ),
-                "pl_rail_map.osm": HTTPResource.get(
-                    "https://raw.githubusercontent.com/MKuranowski/PLRailMap/master/plrailmap.osm"
-                ),
+                "geo.osm": LocalResource("data/geo.osm"),
                 "bus_routes.yaml": LocalResource("data/bus_routes.yaml"),
                 "directions.yaml": LocalResource("data/directions.yaml"),
                 "routes.yaml": LocalResource("data/routes.yaml"),
@@ -163,31 +167,8 @@ class PolishTrainsGTFS(App):
                     task_name="DropUnusedAgencies",
                 ),
                 RemoveUnusedEntities(),
-                AddEntity(
-                    entity=Stop("34868", "Warszawa Zachodnia (Peron 9)", 0, 0),
-                    task_name="AddWarszawaZachodniaPeron9Stop",
-                ),
-                ExecuteSQL(
-                    statement=(
-                        "UPDATE stop_times SET stop_id = '34868' "
-                        "WHERE stop_id = '33506' AND platform = '9'"
-                    ),
-                    task_name="MoveDeparturesToWarszawaZachodniaPeron9",
-                ),
-                ExtractRoutes(),
-                CurateRoutes(),
-                LoadStops(),
                 ShiftNegativeTimes(),
-                ExecuteSQL(
-                    statement=(
-                        "UPDATE stop_times SET arrival_time = arrival_time - 3600, "
-                        "departure_time = departure_time - 3600 WHERE stop_id = '179200'"
-                    ),
-                    task_name="FixTimesAtMockava",
-                ),
-                AddTrainNames(),
-                GenerateTripHeadsign(),
-                AssignDirectionID(),
+                DeduplicateConsecutiveTimes(),
                 ExecuteSQL(
                     statement=(
                         "UPDATE stop_times SET platform = 'BUS' "
@@ -219,9 +200,36 @@ class PolishTrainsGTFS(App):
                     ),
                     task_name="FixMissingBusPlatformsForDisembarkingOnly",
                 ),
+                AddEntity(
+                    entity=Stop("34868", "Warszawa Zachodnia (Peron 9)", 0, 0),
+                    task_name="AddWarszawaZachodniaPeron9Stop",
+                ),
+                ExecuteSQL(
+                    statement=(
+                        "UPDATE stop_times SET stop_id = '34868' "
+                        "WHERE stop_id = '33506' AND platform = '9'"
+                    ),
+                    task_name="MoveDeparturesToWarszawaZachodniaPeron9",
+                ),
+                ExtractRoutes(),
+                CurateRoutes(),
+                LoadStations(),
+                ExecuteSQL(
+                    statement=(
+                        "UPDATE stop_times SET arrival_time = arrival_time - 3600, "
+                        "departure_time = departure_time - 3600 WHERE stop_id IN ("
+                        "  SELECT stop_id FROM stops"
+                        "  WHERE json_extract(extra_fields_json, '$.country') IN ('LT', 'BY', 'UA')"
+                        ")"
+                    ),
+                    task_name="FixEasternEuropeanTime",
+                ),
+                AddTrainNames(),
+                GenerateTripHeadsign(),
+                AssignDirectionID(),
                 SplitBusLegs(),
-                RemoveUnusedEntities(),
                 LoadBusStops(),
+                RemoveUnusedEntities(preserve_fallback_stops=True),
                 ExecuteSQL(
                     statement=(
                         "UPDATE stops SET extra_fields_json = json_set("
@@ -237,8 +245,8 @@ class PolishTrainsGTFS(App):
                     ),
                     task_name="SetStopTimezone",
                 ),
-                GenerateShapes("pl_rail_map.osm", "shapes.yaml"),
-                GenerateBusShapes("pl_rail_map.osm"),
+                GenerateShapes("geo.osm", "shapes.yaml"),
+                GenerateBusShapes("geo.osm"),
                 CleanWaypoints(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
