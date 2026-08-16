@@ -1,7 +1,7 @@
 import csv
 import difflib
+from collections import defaultdict
 from typing import NamedTuple, TypedDict, cast
-import json
 
 
 from ..util.apikey import get_apikey
@@ -32,8 +32,8 @@ class KPDStop(NamedTuple):
     departure_track: str
 
 
-KPDLookup = dict[str, dict[str, list[KPDStop]]]
-CalendarLookup = dict[str, list[str]]
+KPDLookup = defaultdict[str, dict[str, list[KPDStop]]]
+CalendarLookup = defaultdict[str, list[str]]
 
 
 class CleanNonPaxStops(Task):
@@ -238,14 +238,10 @@ def merge_extra_fields(plk: StopTime | None, kpd: KPDStop | None) -> str | None:
     if not plk:
         return None
 
-    if plk.platform or not kpd:
-        # PLK data contains platform, so it also contains track
-        return plk.extra_fields_json
+    if not plk.platform and kpd:
+        plk.set_extra_field("track", kpd.departure_track)
 
-    extra_fields = json.loads(plk.extra_fields_json or "{}")
-
-    extra_fields["track"] = kpd.departure_track
-    return json.dumps(extra_fields)
+    return plk.extra_fields_json
 
 
 def normalize_platform(x: str) -> str:
@@ -312,10 +308,10 @@ def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
     Parses train rows from KPD CSV and builds a lookup mapping
     clean train numbers to date, and date to a list of KPDStop.
     """
-    parsed: KPDLookup = {}
+    parsed = KPDLookup(dict)
     for key, lines in rows:
         clean_number = str(int(key.train_number.split("/")[0]) // 2 * 2)
-        stops: list[KPDStop] = []
+        stops = list[KPDStop]()
         for line in lines:
             stop_id = line["NumerStacji"]
             departure_platform = line["PeronWyjazd"]
@@ -323,7 +319,7 @@ def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
                 departure_platform = "NO_PAX"
             departure_track = line["TorWyjazd"]
             stops.append(KPDStop(stop_id, departure_platform, departure_track))
-        parsed.setdefault(clean_number, {})[key.date] = stops
+        parsed[clean_number][key.date] = stops
     return parsed
 
 
@@ -331,9 +327,9 @@ def build_calendar_lookup(calendar_dates: list[CalendarException]) -> CalendarLo
     """
     Builds a lookup mapping calendar IDs to a list of dates (as strings).
     """
-    lookup: CalendarLookup = {}
+    lookup = CalendarLookup(list)
     for entry in calendar_dates:
-        lookup.setdefault(entry.calendar_id, []).append(str(entry.date))
+        lookup[entry.calendar_id].append(str(entry.date))
     return lookup
 
 
