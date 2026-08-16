@@ -114,12 +114,25 @@ class LoadICKPD(LoadExternal):
         if not kpd:
             return
 
-        for plk_trip in self.get_trips_to_process(r):
-            if kpd_times := self.find_kpd_match(kpd, plk_trip, r):
-                plk_times = self.get_plk_stop_times(plk_trip, r)
-                combined_times = self.enhance_items(plk_times, kpd_times, r)
-                if combined_times:
-                    self.apply_combined_times(plk_trip, combined_times, r)
+        trips = self.get_trips_to_process(r)
+        total_trips = len(trips)
+        self.logger.info("Processing KPD and PLK schedules for %d trips", total_trips)
+
+        with r.db.transaction():
+            for i, plk_trip in enumerate(trips):
+                if (i + 1) % 500 == 0:
+                    self.logger.info(
+                        "Processed %d / %d (%.2f %%) trips",
+                        i + 1,
+                        total_trips,
+                        100 * (i + 1) / total_trips,
+                    )
+
+                if kpd_times := self.find_kpd_match(kpd, plk_trip, r):
+                    plk_times = self.get_plk_stop_times(plk_trip, r)
+                    combined_times = self.enhance_items(plk_times, kpd_times, r)
+                    if combined_times:
+                        self.apply_combined_times(plk_trip, combined_times, r)
 
     def load_lookup_tables(self, r: TaskRuntime):
         self.important_waypoints = {
@@ -159,7 +172,6 @@ class LoadICKPD(LoadExternal):
         ).all()
 
     def find_kpd_match(self, kpd: KPDLookup, trip: Trip, r: TaskRuntime) -> list[KPDStop] | None:
-
         plk_number = trip.get_extra_field("plk_train_number")
         if not plk_number:
             self.logger.warning("Trip %s has no plk_train_number", trip.id)
