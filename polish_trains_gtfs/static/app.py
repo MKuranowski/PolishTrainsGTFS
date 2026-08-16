@@ -11,9 +11,9 @@ from impuls.tasks import AddEntity, ExecuteSQL, GenerateTripHeadsign, SaveGTFS
 from . import external
 from .add_train_names import AddTrainNames
 from .assign_direction_id import AssignDirectionID
-from .external.ic_kpd import CleanWaypoints
 from .curate_routes import CurateRoutes
 from .deduplicate_consecutive_times import DeduplicateConsecutiveTimes
+from .external.ic_kpd import CleanWaypoints
 from .extract_routes import ExtractRoutes
 from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops

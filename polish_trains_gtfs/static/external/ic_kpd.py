@@ -1,22 +1,21 @@
 import csv
 import difflib
 from collections import defaultdict
-from typing import NamedTuple, cast
-
-
-from ..util.apikey import get_apikey
-from .task import LoadExternal
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
+from typing import NamedTuple, cast
 
 from impuls import LocalResource, Task, TaskRuntime
-from impuls.model import StopTime, TimePoint, Trip, CalendarException, Stop
 from impuls.errors import InputNotModified
+from impuls.model import CalendarException, Stop, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 from impuls.tools.types import StrPath
+
+from ..util.apikey import get_apikey
+from .task import LoadExternal
 
 CSVRow = dict[str, str]
 
@@ -247,9 +246,8 @@ class LoadICKPD(LoadExternal):
             )
             r.db.create_many(StopTime, combined)
         except Exception:
-            self.logger.error(
+            self.logger.exception(
                 f"Error occurred while updating stop_times for trip {trip.id} {trip.get_extra_field('plk_train_number')}",
-                exc_info=True,
             )
             self.logger.debug(f"Stops for trip {trip.id}: {combined}")
             raise
