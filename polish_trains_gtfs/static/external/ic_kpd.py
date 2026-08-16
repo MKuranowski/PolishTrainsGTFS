@@ -1,6 +1,6 @@
 import csv
 import difflib
-from typing import NamedTuple, Any, TypedDict, cast
+from typing import NamedTuple, TypedDict, cast
 import json
 
 
@@ -30,20 +30,6 @@ class KPDStop(NamedTuple):
     stop_id: str
     departure_platform: str
     departure_track: str
-
-
-class PLKStop(NamedTuple):
-    stop_id: str
-    trip_id: str
-    stop_sequence: int
-    arrival_time: int
-    departure_time: int
-    pickup_type: int
-    drop_off_type: int
-    stop_headsign: str
-    shape_dist_traveled: float | None
-    platform: str
-    extra_fields_json: str | None
 
 
 KPDLookup = dict[str, dict[str, list[KPDStop]]]
@@ -182,21 +168,14 @@ class LoadICKPD(LoadExternal):
                     )
                     continue
                 stops_from_kpd = kpd_lookup[main_number][date]
-                raw_stops_from_plk = [
-                    PLKStop(*cast(tuple[Any, ...], row))
-                    for row in r.db.raw_execute(
-                        """
-                        SELECT stop_id, trip_id, stop_sequence, arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json
-                        FROM stop_times
-                        WHERE trip_id = ?
-                        ORDER BY stop_sequence
-                    """,
-                        (trip.id,),
-                    ).all()
-                ]
+                stops_from_plk = r.db.typed_out_execute(
+                    "SELECT * FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence",
+                    StopTime,
+                    (trip.id,),
+                ).all()
 
                 combined, diverging = merge_stop_sequences(
-                    raw_stops_from_plk, stops_from_kpd
+                    stops_from_plk, stops_from_kpd
                 )
 
                 if not diverging:
@@ -223,10 +202,10 @@ class LoadICKPD(LoadExternal):
                                 stop_id,
                                 trip.id,
                                 i + 1,
-                                plk.arrival_time if plk else 0,
-                                plk.departure_time if plk else 0,
-                                plk.pickup_type if plk else 1,
-                                plk.drop_off_type if plk else 1,
+                                int(plk.arrival_time.total_seconds()) if plk else 0,
+                                int(plk.departure_time.total_seconds()) if plk else 0,
+                                plk.pickup_type.value if plk else 1,
+                                plk.drop_off_type.value if plk else 1,
                                 plk.stop_headsign if plk else "",
                                 plk.shape_dist_traveled if plk else None,
                                 merge_platform(plk, kpd),
@@ -246,7 +225,7 @@ class LoadICKPD(LoadExternal):
                     continue
 
 
-def merge_platform(plk: PLKStop | None, kpd: KPDStop | None):
+def merge_platform(plk: StopTime | None, kpd: KPDStop | None) -> str:
     if plk and plk.platform:
         return plk.platform
 
@@ -256,7 +235,7 @@ def merge_platform(plk: PLKStop | None, kpd: KPDStop | None):
     return ""
 
 
-def merge_extra_fields(plk: PLKStop | None, kpd: KPDStop | None):
+def merge_extra_fields(plk: StopTime | None, kpd: KPDStop | None) -> str | None:
     """
     Add track number when it's missing in plk data
     """
@@ -285,7 +264,7 @@ def normalize_platform(x: str) -> str:
     return f"{base}{suffix}"
 
 
-def get_plk_train_numbers(plk_number: str) -> Tuple[str, str]:
+def get_plk_train_numbers(plk_number: str) -> tuple[str, str]:
     """
     Parses the PLK train number and returns a tuple of (main_number, extra_number).
     """
@@ -302,26 +281,26 @@ def get_plk_train_numbers(plk_number: str) -> Tuple[str, str]:
 
 
 def merge_stop_sequences(
-    raw_stops_from_plk: list[PLKStop], stops_from_kpd: list[KPDStop]
-) -> tuple[list[tuple[str, PLKStop | None, KPDStop | None]], set[str]]:
+    stops_from_plk: list[StopTime], stops_from_kpd: list[KPDStop]
+) -> tuple[list[tuple[str, StopTime | None, KPDStop | None]], set[str]]:
     """
     Merges PLK and KPD stop sequences and identifies diverging stop IDs.
     """
-    keys_plk = [v.stop_id for v in raw_stops_from_plk]
+    keys_plk = [v.stop_id for v in stops_from_plk]
     keys_kpd = [v.stop_id for v in stops_from_kpd]
 
-    combined: list[tuple[str, PLKStop | None, KPDStop | None]] = []
+    combined: list[tuple[str, StopTime | None, KPDStop | None]] = []
     diverging: set[str] = set()
 
     matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
 
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag == "equal":
-            for plk, kpd in zip(raw_stops_from_plk[i1:i2], stops_from_kpd[j1:j2]):
+            for plk, kpd in zip(stops_from_plk[i1:i2], stops_from_kpd[j1:j2]):
                 combined.append((plk.stop_id, plk, kpd))
         else:
             if tag in ("replace", "delete"):
-                for k in raw_stops_from_plk[i1:i2]:
+                for k in stops_from_plk[i1:i2]:
                     combined.append((k.stop_id, k, None))
                     diverging.add(k.stop_id)
             if tag in ("replace", "insert"):
@@ -363,8 +342,8 @@ def build_calendar_lookup(calendar_dates: list[CalendarException]) -> CalendarLo
 
 
 def ensure_start_and_end_at_pax_station(
-    stops: list[tuple[str, PLKStop | None, KPDStop | None]],
-) -> list[tuple[str, PLKStop | None, KPDStop | None]]:
+    stops: list[tuple[str, StopTime | None, KPDStop | None]],
+) -> list[tuple[str, StopTime | None, KPDStop | None]]:
     def is_no_pax(index: int) -> bool:
         kpd_stop = stops[index][2]
         return kpd_stop is not None and kpd_stop.departure_platform == "NO_PAX"
