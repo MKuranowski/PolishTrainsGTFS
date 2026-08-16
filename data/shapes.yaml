@@ -17,3 +17,6 @@ force_via:
   - from: "77107"  # Oświęcim
     to: "80416"  # Kraków Główny
     via: [50.002186, 19.429353]  # Zator
+  - from: "62802" # Częstochowa Stradom
+    to: "63073" # Koniecpol
+    via: [50.774119, 19.128919]

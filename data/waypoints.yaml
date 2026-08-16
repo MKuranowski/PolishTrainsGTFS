@@ -2,6 +2,7 @@ waypoints:
   # Swarzędz - Poznań: Franowo vs Wschodni
   - "28522" # Poznań Starołęka
   # CMK vs other routes
+  - "63073" # Koniecpol (for Wrocław -> CMK)
   - "64899" # Włoszczowa Północ
   - "48959" # Opoczno Południe
   - "64865" # Góra Włodowska
