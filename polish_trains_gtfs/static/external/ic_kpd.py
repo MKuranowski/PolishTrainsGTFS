@@ -1,6 +1,6 @@
 import csv
 import difflib
-from typing import List, Optional, Tuple, Set, NamedTuple, Any, TypedDict, cast
+from typing import NamedTuple, Any, TypedDict, cast
 import json
 
 
@@ -41,13 +41,13 @@ class PLKStop(NamedTuple):
     pickup_type: int
     drop_off_type: int
     stop_headsign: str
-    shape_dist_traveled: Optional[float]
+    shape_dist_traveled: float | None
     platform: str
-    extra_fields_json: Optional[str]
+    extra_fields_json: str | None
 
 
-KPDLookup = dict[str, dict[str, List[KPDStop]]]
-CalendarLookup = dict[str, List[str]]
+KPDLookup = dict[str, dict[str, list[KPDStop]]]
+CalendarLookup = dict[str, list[str]]
 
 
 class CleanNonPaxStops(Task):
@@ -183,7 +183,7 @@ class LoadICKPD(LoadExternal):
                     continue
                 stops_from_kpd = kpd_lookup[main_number][date]
                 raw_stops_from_plk = [
-                    PLKStop(*cast(Tuple[Any, ...], row))
+                    PLKStop(*cast(tuple[Any, ...], row))
                     for row in r.db.raw_execute(
                         """
                         SELECT stop_id, trip_id, stop_sequence, arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json
@@ -302,16 +302,16 @@ def get_plk_train_numbers(plk_number: str) -> Tuple[str, str]:
 
 
 def merge_stop_sequences(
-    raw_stops_from_plk: List[PLKStop], stops_from_kpd: List[KPDStop]
-) -> Tuple[List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]], Set[str]]:
+    raw_stops_from_plk: list[PLKStop], stops_from_kpd: list[KPDStop]
+) -> tuple[list[tuple[str, PLKStop | None, KPDStop | None]], set[str]]:
     """
     Merges PLK and KPD stop sequences and identifies diverging stop IDs.
     """
     keys_plk = [v.stop_id for v in raw_stops_from_plk]
     keys_kpd = [v.stop_id for v in stops_from_kpd]
 
-    combined: List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]] = []
-    diverging: Set[str] = set()
+    combined: list[tuple[str, PLKStop | None, KPDStop | None]] = []
+    diverging: set[str] = set()
 
     matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
 
@@ -332,7 +332,7 @@ def merge_stop_sequences(
     return combined, diverging
 
 
-def build_kpd_lookup(rows: Iterator[Tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLookup:
+def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLookup:
     """
     Parses train rows from KPD CSV and builds a lookup mapping
     clean train numbers to date, and date to a list of KPDStop.
@@ -340,7 +340,7 @@ def build_kpd_lookup(rows: Iterator[Tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
     parsed: KPDLookup = {}
     for key, lines in rows:
         clean_number = str(int(key.train_number.split("/")[0]) // 2 * 2)
-        stops: List[KPDStop] = []
+        stops: list[KPDStop] = []
         for line in lines:
             stop_id = line["NumerStacji"]
             departure_platform = line["PeronWyjazd"]
@@ -352,7 +352,7 @@ def build_kpd_lookup(rows: Iterator[Tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
     return parsed
 
 
-def build_calendar_lookup(calendar_dates: List[CalendarException]) -> CalendarLookup:
+def build_calendar_lookup(calendar_dates: list[CalendarException]) -> CalendarLookup:
     """
     Builds a lookup mapping calendar IDs to a list of dates (as strings).
     """
@@ -363,8 +363,8 @@ def build_calendar_lookup(calendar_dates: List[CalendarException]) -> CalendarLo
 
 
 def ensure_start_and_end_at_pax_station(
-    stops: List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]],
-) -> List[Tuple[str, Optional[PLKStop], Optional[KPDStop]]]:
+    stops: list[tuple[str, PLKStop | None, KPDStop | None]],
+) -> list[tuple[str, PLKStop | None, KPDStop | None]]:
     def is_no_pax(index: int) -> bool:
         kpd_stop = stops[index][2]
         return kpd_stop is not None and kpd_stop.departure_platform == "NO_PAX"
@@ -381,7 +381,7 @@ def ensure_start_and_end_at_pax_station(
     return stops[start : end + 1]
 
 
-def train_rows(filename: StrPath, non_pax_important_stops: List[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
+def train_rows(filename: StrPath, non_pax_important_stops: list[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
     # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
     #       For the past 5 years that was the case.
     with open(filename, "r", encoding="windows-1250", newline="") as f:
