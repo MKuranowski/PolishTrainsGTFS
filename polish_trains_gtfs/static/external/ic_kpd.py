@@ -130,57 +130,56 @@ class LoadICKPD(LoadExternal):
 
         kpd_lookup = build_kpd_lookup(rows)
 
-        trips = r.db.retrieve_all(Trip).all()
+        trips = r.db.typed_out_execute("SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip).all()
         calendar_dates = r.db.retrieve_all(CalendarException).all()
         calendar_lookup = build_calendar_lookup(calendar_dates)
 
         for trip in trips:
-            with r.db.transaction() as tx:
-                if "IC" not in trip.id:
-                    continue
-                plk_number = trip.get_extra_field("plk_train_number")
-                if not plk_number:
-                    self.logger.warning("Trip %s has no plk_train_number", trip.id)
-                    continue
+            plk_number = trip.get_extra_field("plk_train_number")
+            if not plk_number:
+                self.logger.warning("Trip %s has no plk_train_number", trip.id)
+                continue
 
-                main_number, extra_number = get_plk_train_numbers(plk_number)
+            main_number, extra_number = get_plk_train_numbers(plk_number)
 
-                if main_number not in kpd_lookup:
-                    if extra_number in kpd_lookup:
-                        main_number = extra_number
-                    else:
-                        self.logger.warning(
-                            "Train %s not found in KPD Rozklad data.", main_number
-                        )
-                        continue
-
-                calendar_dates_for_trip = calendar_lookup.get(trip.calendar_id, [])
-                if not calendar_dates_for_trip:
+            if main_number not in kpd_lookup:
+                if extra_number in kpd_lookup:
+                    main_number = extra_number
+                else:
                     self.logger.warning(
-                        "Trip %s has no calendar dates. Skipping.", trip.id
+                        "Train %s not found in KPD Rozklad data.", main_number
                     )
                     continue
 
-                date = next((d for d in calendar_dates_for_trip if d in kpd_lookup[main_number]), None)
-                if not date:
-                    self.logger.warning(
-                        f"Train {trip.id} / {main_number} has no stops in KPD for any of its active dates. Skipping."
-                    )
-                    continue
-                stops_from_kpd = kpd_lookup[main_number][date]
-                stops_from_plk = r.db.typed_out_execute(
-                    "SELECT * FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence",
-                    StopTime,
-                    (trip.id,),
-                ).all()
-
-                combined, diverging = merge_stop_sequences(
-                    stops_from_plk, stops_from_kpd
+            calendar_dates_for_trip = calendar_lookup.get(trip.calendar_id, [])
+            if not calendar_dates_for_trip:
+                self.logger.warning(
+                    "Trip %s has no calendar dates. Skipping.", trip.id
                 )
+                continue
 
-                if not diverging:
-                    continue
+            date = next((d for d in calendar_dates_for_trip if d in kpd_lookup[main_number]), None)
+            if not date:
+                self.logger.warning(
+                    f"Train {trip.id} / {main_number} has no stops in KPD for any of its active dates. Skipping."
+                )
+                continue
+            stops_from_kpd = kpd_lookup[main_number][date]
+            stops_from_plk = r.db.typed_out_execute(
+                "SELECT * FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence",
+                StopTime,
+                (trip.id,),
+            ).all()
 
+            combined, diverging = merge_stop_sequences(
+                stops_from_plk, stops_from_kpd
+            )
+
+            if not diverging:
+                continue
+
+            filtered = ensure_start_and_end_at_pax_station(combined)
+            try:
                 r.db.raw_execute(
                     """
                                 DELETE FROM stop_times
@@ -188,41 +187,38 @@ class LoadICKPD(LoadExternal):
                                 """,
                     (trip.id,),
                 )
-
-                filtered = ensure_start_and_end_at_pax_station(combined)
-                try:
-                    r.db.raw_execute_many(
-                        """
-                    INSERT INTO stop_times (stop_id, trip_id, stop_sequence,
-                                    arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                        [
-                            (
-                                stop_id,
-                                trip.id,
-                                i + 1,
-                                int(plk.arrival_time.total_seconds()) if plk else 0,
-                                int(plk.departure_time.total_seconds()) if plk else 0,
-                                plk.pickup_type.value if plk else 1,
-                                plk.drop_off_type.value if plk else 1,
-                                plk.stop_headsign if plk else "",
-                                plk.shape_dist_traveled if plk else None,
-                                merge_platform(plk, kpd),
-                                merge_extra_fields(plk, kpd),
-                            )
-                            for i, (stop_id, plk, kpd) in enumerate(filtered)
-                        ],
-                    )
-                except Exception as e:
-                    tx.rollback()
-                    self.logger.error(
-                        f"Error occurred while updating stop_times for trip {trip.id} / {main_number}: {e}, {e.args}"
-                    )
-                    self.logger.debug(
-                        f"Stops for trip {trip.id} / {main_number}: {filtered}"
-                    )
-                    continue
+                r.db.raw_execute_many(
+                    """
+                INSERT INTO stop_times (stop_id, trip_id, stop_sequence,
+                                arrival_time, departure_time, pickup_type, drop_off_type, stop_headsign, shape_dist_traveled, platform, extra_fields_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+                    [
+                        (
+                            stop_id,
+                            trip.id,
+                            i + 1,
+                            int(plk.arrival_time.total_seconds()) if plk else 0,
+                            int(plk.departure_time.total_seconds()) if plk else 0,
+                            plk.pickup_type.value if plk else 1,
+                            plk.drop_off_type.value if plk else 1,
+                            plk.stop_headsign if plk else "",
+                            plk.shape_dist_traveled if plk else None,
+                            merge_platform(plk, kpd),
+                            merge_extra_fields(plk, kpd),
+                        )
+                        for i, (stop_id, plk, kpd) in enumerate(filtered)
+                    ],
+                )
+            except Exception:
+                self.logger.error(
+                    f"Error occurred while updating stop_times for trip {trip.id} / {main_number}",
+                    exc_info=True,
+                )
+                self.logger.debug(
+                    f"Stops for trip {trip.id} / {main_number}: {filtered}"
+                )
+                raise
 
 
 def merge_platform(plk: StopTime | None, kpd: KPDStop | None) -> str:
