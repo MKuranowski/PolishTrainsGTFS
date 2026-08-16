@@ -1,12 +1,12 @@
 import csv
 import difflib
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from datetime import datetime, timezone
 from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
-from typing import Iterable, NamedTuple, cast
+from typing import NamedTuple, cast
 
 from impuls import LocalResource, Task, TaskRuntime
 from impuls.errors import InputNotModified
