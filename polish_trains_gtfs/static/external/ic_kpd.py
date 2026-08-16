@@ -46,7 +46,7 @@ class CleanWaypoints(Task):
                 """
             )
 
-            #renumber stop_sequence
+            # renumber stop_sequence
             r.db.raw_execute(
                 """
                 UPDATE stop_times
@@ -76,6 +76,7 @@ class CleanWaypoints(Task):
                 """
             )
 
+
 class LoadICKPD(LoadExternal):
     def __init__(self):
         super().__init__()
@@ -97,7 +98,7 @@ class LoadICKPD(LoadExternal):
                     ),
                     file_name_in_zip="KPD_Rozklad.csv",
                 ),
-                "waypoints.yaml": LocalResource("data/waypoints.yaml")
+                "waypoints.yaml": LocalResource("data/waypoints.yaml"),
             }
         else:
             return {}
@@ -105,7 +106,6 @@ class LoadICKPD(LoadExternal):
     def clear(self):
         self.important_waypoints.clear()
         self.calendar_lookup.clear()
-
 
     def execute(self, r: TaskRuntime) -> None:
         self.clear()
@@ -123,7 +123,9 @@ class LoadICKPD(LoadExternal):
                     self.apply_combined_times(plk_trip, combined_times, r)
 
     def load_lookup_tables(self, r: TaskRuntime):
-        self.important_waypoints = {cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]}
+        self.important_waypoints = {
+            cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]
+        }
 
         with r.db.transaction():
             all_stops = {stop.id for stop in r.db.retrieve_all(Stop).all()}
@@ -145,18 +147,17 @@ class LoadICKPD(LoadExternal):
 
     def load_kpd(self, r: TaskRuntime) -> KPDLookup | None:
         if "ic_kpd_rozklad.csv" not in r.resources:
-            self.logger.warning(
-                "No IC KPD Rozklad resource available. Skipping execution."
-            )
+            self.logger.warning("No IC KPD Rozklad resource available. Skipping execution.")
             return
 
         rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, self.important_waypoints)
 
         return build_kpd_lookup(rows)
 
-
-    def get_trips_to_process(self, r:TaskRuntime) -> list[Trip]:
-        return r.db.typed_out_execute("SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip).all()
+    def get_trips_to_process(self, r: TaskRuntime) -> list[Trip]:
+        return r.db.typed_out_execute(
+            "SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip
+        ).all()
 
     def find_kpd_match(self, kpd: KPDLookup, trip: Trip, r: TaskRuntime) -> list[KPDStop] | None:
 
@@ -171,16 +172,12 @@ class LoadICKPD(LoadExternal):
             if extra_number in kpd:
                 main_number = extra_number
             else:
-                self.logger.warning(
-                    "Train %s not found in KPD Rozklad data.", main_number
-                )
+                self.logger.warning("Train %s not found in KPD Rozklad data.", main_number)
                 return
 
         calendar_dates_for_trip = self.calendar_lookup.get(trip.calendar_id, [])
         if not calendar_dates_for_trip:
-            self.logger.warning(
-                "Trip %s has no calendar dates. Skipping.", trip.id
-            )
+            self.logger.warning("Trip %s has no calendar dates. Skipping.", trip.id)
             return
 
         date = next((d for d in calendar_dates_for_trip if d in kpd[main_number]), None)
@@ -200,19 +197,21 @@ class LoadICKPD(LoadExternal):
         ).all()
         return stops_from_plk
 
-    def enhance_items(self, plk_stop_times: list[StopTime], kpd_stops: list[KPDStop], r: TaskRuntime) -> list[StopTime] | None:
+    def enhance_items(
+        self, plk_stop_times: list[StopTime], kpd_stops: list[KPDStop], r: TaskRuntime
+    ) -> list[StopTime] | None:
         """
         Enhances PLK stop times with KPD stop data and inserts KPD stops when missing from PLK.
         """
         keys_plk = [v.stop_id for v in plk_stop_times]
         keys_kpd = [v.stop_id for v in kpd_stops]
-    
+
         combined = list[StopTime]()
         updated_stops = set[str]()
         trip_id = plk_stop_times[0].trip_id
-    
+
         matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
-    
+
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
                 for plk, kpd in zip(plk_stop_times[i1:i2], kpd_stops[j1:j2]):
@@ -228,15 +227,14 @@ class LoadICKPD(LoadExternal):
                     for kpd in kpd_stops[j1:j2]:
                         combined.append(kpd_to_stop_time(trip_id, kpd))
                         updated_stops.add(kpd.stop_id)
-    
+
         if not updated_stops:
             return None
-    
+
         for i in range(len(combined)):
             combined[i].stop_sequence = i
-    
-        return ensure_start_and_end_not_at_waypoint(combined)
 
+        return ensure_start_and_end_not_at_waypoint(combined)
 
     def apply_combined_times(self, trip: Trip, combined: list[StopTime], r: TaskRuntime):
         try:
@@ -253,9 +251,7 @@ class LoadICKPD(LoadExternal):
                 f"Error occurred while updating stop_times for trip {trip.id} {trip.get_extra_field('plk_train_number')}",
                 exc_info=True,
             )
-            self.logger.debug(
-                f"Stops for trip {trip.id}: {combined}"
-            )
+            self.logger.debug(f"Stops for trip {trip.id}: {combined}")
             raise
 
 
@@ -295,6 +291,7 @@ def merge_stop_time_with_kpd(plk: StopTime, kpd: KPDStop) -> tuple[StopTime, boo
         updated = True
     return plk, updated
 
+
 def kpd_to_stop_time(trip_id: str, kpd: KPDStop):
     """
     Creates an "empty" StopTime based on KPDStop. Such StopTime mustn't be exported in GTFS and must be removed via CleanWaypoints
@@ -328,15 +325,15 @@ def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLo
             stops.append(KPDStop(stop_id, departure_platform, departure_track))
         parsed[clean_number][key.date] = stops
     return parsed
-    
 
 
-def ensure_start_and_end_not_at_waypoint(
-    stops_times: list[StopTime]
-) -> list[StopTime]:
+def ensure_start_and_end_not_at_waypoint(stops_times: list[StopTime]) -> list[StopTime]:
     def is_waypoint(index: int) -> bool:
         stop_time = stops_times[index]
-        return stop_time.pickup_type == StopTime.PassengerExchange.NONE and stop_time.drop_off_type == StopTime.PassengerExchange.NONE
+        return (
+            stop_time.pickup_type == StopTime.PassengerExchange.NONE
+            and stop_time.drop_off_type == StopTime.PassengerExchange.NONE
+        )
 
     start = 0
     end = len(stops_times) - 1
@@ -350,17 +347,25 @@ def ensure_start_and_end_not_at_waypoint(
     return stops_times[start : end + 1]
 
 
-def train_rows(filename: StrPath, important_waypoints: set[str]) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
+def train_rows(
+    filename: StrPath, important_waypoints: set[str]
+) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
     # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
     #       For the past 5 years that was the case.
+    # List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
+    IGNORED_STOPS = (
+        "179301",  # Мостиська IІ /Mostistka/' - not in PLK API
+        "179215",  # Horka - technical station, not in PLK API
+        "179193",  # Jagodin - not in PLK API
+        "178501",  # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
+    )
     with open(filename, "r", encoding="windows-1250", newline="") as f:
         all_rows = csv.DictReader(f, delimiter=";")
         pax_rows = filter(
             lambda r: (
-                r["StacjaHandlowa"] == "1"
-                or r["NumerStacji"] in important_waypoints
-            )
-            and r["NumerStacji"] not in IGNORED_STOPS,
+                (r["StacjaHandlowa"] == "1" or r["NumerStacji"] in important_waypoints)
+                and r["NumerStacji"] not in IGNORED_STOPS
+            ),
             all_rows,
         )
         for key, group in groupby(pax_rows, itemgetter("DataOdjazdu", "NrPociagu")):
@@ -402,9 +407,7 @@ class FTP_TLS_Patched(FTP_TLS):
 
 
 class FTPResource(ConcreteResource):
-    def __init__(
-        self, filename: str, username: str, password: str, ftp_host: str
-    ) -> None:
+    def __init__(self, filename: str, username: str, password: str, ftp_host: str) -> None:
         super().__init__()
         self.filename = filename
         self.username = username
@@ -423,14 +426,6 @@ class FTPResource(ConcreteResource):
             self.fetch_time = datetime.now(timezone.utc)
             yield from ftp.iter_binary(f"RETR {self.filename}")
 
-
-# List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
-IGNORED_STOPS = (
-    "179301", # Мостиська IІ /Mostistka/' - not in PLK API
-    "179215", # Horka - technical station, not in PLK API
-    "179193", # Jagodin - not in PLK API
-    "178501", # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
-)
 
 ROMAN_TO_ARABIC = {
     "I": "1",
