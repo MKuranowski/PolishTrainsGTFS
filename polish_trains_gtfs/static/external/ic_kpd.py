@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
-from typing import NamedTuple, cast
+from typing import Iterable, NamedTuple, cast
 
 from impuls import LocalResource, Task, TaskRuntime
 from impuls.errors import InputNotModified
@@ -305,7 +305,7 @@ def kpd_to_stop_time(trip_id: str, kpd: KPDStop):
     )
 
 
-def build_kpd_lookup(rows: Iterator[tuple[TrainKey, Iterator[CSVRow]]]) -> KPDLookup:
+def build_kpd_lookup(rows: Iterable[tuple[TrainKey, Iterable[CSVRow]]]) -> KPDLookup:
     """
     Parses train rows from KPD CSV and builds a lookup mapping
     clean train numbers to date, and date to a list of KPDStop.
