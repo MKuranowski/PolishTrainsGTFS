@@ -19,4 +19,4 @@ force_via:
     via: [50.002186, 19.429353]  # Zator
   - from: "62802" # Częstochowa Stradom
     to: "63073" # Koniecpol
-    via: [50.774119, 19.128919]
+    via: [50.774119, 19.128919] # LK61 midpoint between Kucelinka and Częstochowa Stradom
