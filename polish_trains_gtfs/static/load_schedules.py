@@ -160,7 +160,7 @@ class LoadSchedules(Task):
         route_stations = cast(list[json.Object], r.get("st", []))
         route_stations.sort(key=itemgetter("ord"))
         for i, route_station in enumerate(route_stations):
-            self.process_route_stop(db, trip_id, i, route_station)
+            self.process_route_stop(db, trip_id, i, route_station, i == 0, i == len(route_stations) - 1)
 
     def process_route_stop(
         self,
@@ -168,6 +168,8 @@ class LoadSchedules(Task):
         trip_id: str,
         sequence: int,
         s: json.Object,
+        is_first_stop: bool,
+        is_last_stop: bool,
     ) -> None:
         stop_id = self.get_stop_id(db, s["id"])
         plk_sequence = cast(int, s["ord"])
@@ -219,8 +221,8 @@ class LoadSchedules(Task):
             "arrival_track": arr_track,
         }
 
-        pickup_type = 0
-        drop_off_type = 0
+        pickup_type = int(is_last_stop)
+        drop_off_type = int(is_first_stop)
 
         if (plk_stop_type := s.get("sti")) is not None:
             extra_fields["plk_stop_type"] = str(plk_stop_type)
