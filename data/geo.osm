@@ -90353,12 +90353,6 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="65771"/>
   </node>
-  <node id="90396" action="modify" lat="50.06718108975" lon="22.50278010877" version="1">
-    <tag k="name" v="1;1"/>
-    <tag k="public_transport" v="platform"/>
-    <tag k="ref:station" v="83105"/>
-    <tag k="wheelchair" v="yes"/>
-  </node>
   <node id="70397" action="modify" lat="50.06723089013" lon="22.50278959645" version="1">
     <tag k="name" v="1;2"/>
     <tag k="public_transport" v="platform"/>
@@ -90384,26 +90378,26 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70401" action="modify" lat="50.04699014736" lon="22.61263333194" version="1">
-    <tag k="name" v="Południe"/>
+    <tag k="name" v="Wierzbna"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83279"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70402" action="modify" lat="50.04707325312" lon="22.61278722402" version="1">
-    <tag k="name" v="Północ"/>
+    <tag k="name" v="Pełkinie - Parking"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83279"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70403" action="modify" lat="50.04850541055" lon="22.61078595847" version="1">
-    <tag k="name" v="Zachód (Parking)"/>
+    <tag k="name" v="Pełkinie"/>
     <tag k="platforms" v="2"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83279"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70404" action="modify" lat="50.01070905469" lon="22.67831593484" version="1">
-    <tag k="name" v="Plac Więźniów KL Auschwitz (Peron 1)"/>
+    <tag k="name" v="Plac Więźniów KL Auschwitz (peron 1)"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83261"/>
@@ -90434,28 +90428,28 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70409" action="modify" lat="49.95404157515" lon="22.78535216779" version="1">
-    <tag k="name" v="Wschód (peron 2)"/>
+    <tag k="name" v="peron 2"/>
     <tag k="platforms" v="2"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="84319"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70410" action="modify" lat="49.95359460686" lon="22.78535484999" version="1">
-    <tag k="name" v="Wschód (peron 1)"/>
+    <tag k="name" v="peron 1"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="84319"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70411" action="modify" lat="50.07983076727" lon="22.4543702589" version="1">
-    <tag k="name" v="Wschód (peron 2)"/>
+    <tag k="name" v="peron 2"/>
     <tag k="platforms" v="2"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83063"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70412" action="modify" lat="50.07969220922" lon="22.45431124896" version="1">
-    <tag k="name" v="Wschód (peron 1)"/>
+    <tag k="name" v="peron 1"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83063"/>
@@ -90502,7 +90496,7 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70419" action="modify" lat="50.0833617337" lon="22.28086083859" version="1">
-    <tag k="name" v="Południe"/>
+    <tag k="name" v="peron 1"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="83030"/>
@@ -90516,26 +90510,20 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70421" action="modify" lat="50.08195643453" lon="22.18891203269" version="1">
-    <tag k="name" v="Wschód (peron 2)"/>
+    <tag k="name" v="peron 2"/>
     <tag k="platforms" v="2"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="82651"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70422" action="modify" lat="50.08175419985" lon="22.18894421786" version="1">
-    <tag k="name" v="Wschód (peron 1)"/>
+    <tag k="name" v="peron 1"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="82651"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70423" action="modify" lat="50.06790290723" lon="22.11626842484" version="1">
-    <tag k="name" v="ul. Zakącina - Kładka"/>
-    <tag k="railway" v="subway_entrance"/>
-    <tag k="ref:station" v="82636"/>
-    <tag k="wheelchair" v="no"/>
-  </node>
-  <node id="70424" action="modify" lat="50.06796746923" lon="22.11642533407" version="1">
     <tag k="name" v="ul. Zakącina"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="82636"/>
@@ -90548,13 +90536,13 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70426" action="modify" lat="50.05817457321" lon="22.06791758403" version="1">
-    <tag k="name" v="Południe"/>
+    <tag k="name" v="Krasne - Wólka"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="82644"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70427" action="modify" lat="50.05868686742" lon="22.07134008139" version="1">
-    <tag k="name" v="Krasne - Parking"/>
+    <tag k="name" v="Krasne - Parking (peron 1)"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="82644"/>
@@ -90633,21 +90621,21 @@
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70440" action="modify" lat="50.05435157286" lon="21.99380949005" version="1">
-    <tag k="name" v="Al. Wyzwolenia"/>
+    <tag k="name" v="Al. Wyzwolenia (peron 2)"/>
     <tag k="platforms" v="2"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="261251"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70441" action="modify" lat="50.0537569994" lon="21.99432078715" version="1">
-    <tag k="name" v="ul. Kornela Ujejskiego - K+R"/>
+    <tag k="name" v="ul. Kornela Ujejskiego - K+R (peron 1)"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="261251"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <node id="70442" action="modify" lat="50.05219109854" lon="21.99463158712" version="1">
-    <tag k="name" v="ul. Kornela Ujejskiego - Osiedle"/>
+    <tag k="name" v="ul. Kornela Ujejskiego - Osiedle (peron 1)"/>
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="261251"/>
@@ -90702,6 +90690,12 @@
     <tag k="platforms" v="1"/>
     <tag k="railway" v="subway_entrance"/>
     <tag k="ref:station" v="280258"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="90396" action="modify" lat="50.06718108975" lon="22.50278010877" version="1">
+    <tag k="name" v="1;1"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="83105"/>
     <tag k="wheelchair" v="yes"/>
   </node>
   <way id="1" action="modify" version="1">
