@@ -13,6 +13,7 @@ from .add_train_names import AddTrainNames
 from .assign_direction_id import AssignDirectionID
 from .curate_routes import CurateRoutes
 from .deduplicate_consecutive_times import DeduplicateConsecutiveTimes
+from .external.ic_kpd import CleanWaypoints
 from .extract_routes import ExtractRoutes
 from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops
@@ -246,6 +247,7 @@ class PolishTrainsGTFS(App):
                 ),
                 GenerateShapes("geo.osm", "shapes.yaml"),
                 GenerateBusShapes("geo.osm"),
+                CleanWaypoints(),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )

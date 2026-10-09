@@ -284,7 +284,7 @@ def has_train_departures(db: DBConnection, station_id: str) -> bool:
     with db.raw_execute(
         "SELECT 1 FROM stop_times "
         "JOIN trips USING (trip_id) JOIN routes USING (route_id) "
-        "WHERE stop_id LIKE concat(?, '%') AND routes.type = 2 "
+        "WHERE stop_id LIKE ? || '%' AND routes.type = 2 "
         "LIMIT 1",
         (station_id,),
     ) as q:
