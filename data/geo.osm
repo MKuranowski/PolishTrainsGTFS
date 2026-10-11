@@ -39628,7 +39628,7 @@
   <node id="26903" action="modify" lat="51.74427003459" lon="19.4361662811" version="1"/>
   <node id="26904" action="modify" lat="51.74352463203" lon="19.43653423801" version="1"/>
   <node id="26905" action="modify" lat="50.43428698193" lon="21.50605568123" version="1">
-    <tag k="name" v="Padew"/>
+    <tag k="name" v="Padew Narodowa"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="65755"/>
     <tag k="ref:2" v="281390"/>
@@ -46122,7 +46122,11 @@
   <node id="32411" action="modify" lat="51.66429735934" lon="18.96386145473" version="1"/>
   <node id="32412" action="modify" lat="51.66571479954" lon="18.96371125102" version="1"/>
   <node id="32413" action="modify" lat="51.66901533349" lon="18.9631104362" version="1"/>
-  <node id="32414" action="modify" lat="51.67772466055" lon="18.96150111079" version="1"/>
+  <node id="32414" action="modify" lat="51.67772466055" lon="18.96150111079" version="1">
+    <tag k="name" v="Szadek"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="19364"/>
+  </node>
   <node id="32415" action="modify" lat="51.68635914639" lon="18.95998834491" version="1"/>
   <node id="32416" action="modify" lat="51.69631536483" lon="18.95816444278" version="1"/>
   <node id="32417" action="modify" lat="51.69869601978" lon="18.95774601817" version="1"/>
@@ -46140,7 +46144,11 @@
   <node id="32429" action="modify" lat="51.76215609527" lon="18.9276730907" version="1"/>
   <node id="32430" action="modify" lat="51.76471920523" lon="18.92587064624" version="1"/>
   <node id="32431" action="modify" lat="51.77173049306" lon="18.92067788959" version="1"/>
-  <node id="32432" action="modify" lat="51.77576016276" lon="18.91769527316" version="1"/>
+  <node id="32432" action="modify" lat="51.77563735277" lon="18.91776501059" version="1">
+    <tag k="name" v="Otok"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="19356"/>
+  </node>
   <node id="32433" action="modify" lat="51.78306841483" lon="18.91234158397" version="1"/>
   <node id="32434" action="modify" lat="51.78584935512" lon="18.9108931911" version="1"/>
   <node id="32435" action="modify" lat="51.78813238558" lon="18.90986322284" version="1"/>
@@ -46161,7 +46169,11 @@
   <node id="32450" action="modify" lat="51.87066850829" lon="18.92239450336" version="1"/>
   <node id="32451" action="modify" lat="51.87519936831" lon="18.92715810657" version="1"/>
   <node id="32452" action="modify" lat="51.87744475694" lon="18.92907856822" version="1"/>
-  <node id="32453" action="modify" lat="51.87969665651" lon="18.93083809733" version="1"/>
+  <node id="32453" action="modify" lat="51.87969665651" lon="18.93083809733" version="1">
+    <tag k="name" v="Poddębice"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="19307"/>
+  </node>
   <node id="32454" action="modify" lat="51.88220010657" lon="18.93256543994" version="1"/>
   <node id="32455" action="modify" lat="51.88384912846" lon="18.93339156032" version="1"/>
   <node id="32456" action="modify" lat="51.88667682841" lon="18.93417476535" version="1"/>
@@ -47429,7 +47441,7 @@
     <tag k="ref" v="23549"/>
     <tag k="ref:ibnr" v="1425"/>
   </node>
-  <node id="33502" action="modify" lat="53.01991432215" lon="22.51953184068" version="1">
+  <node id="33502" action="modify" lat="53.01976507785" lon="22.52009510457" version="1">
     <tag k="name" v="Kulesze Kościelne"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="23531"/>
@@ -47544,8 +47556,8 @@
   <node id="33604" action="modify" lat="53.03044563518" lon="22.48419641376" version="1"/>
   <node id="33605" action="modify" lat="53.03114246939" lon="22.47883199573" version="1"/>
   <node id="33606" action="modify" lat="53.03169089581" lon="22.46957301021" version="1"/>
-  <node id="33607" action="modify" lat="53.03241996954" lon="22.45800732493" version="1"/>
-  <node id="33608" action="modify" lat="53.03267804578" lon="22.45388745189" version="1"/>
+  <node id="33607" action="modify" lat="53.03240867867" lon="22.45803146481" version="1"/>
+  <node id="33608" action="modify" lat="53.03267159389" lon="22.45384990096" version="1"/>
   <node id="33609" action="modify" lat="53.03327161527" lon="22.44380234599" version="1"/>
   <node id="33610" action="modify" lat="53.03389743514" lon="22.43351339221" version="1"/>
   <node id="33611" action="modify" lat="53.03459421357" lon="22.4279773128" version="1"/>
@@ -90246,7 +90258,11 @@
   <node id="70325" action="modify" lat="50.51039727999" lon="21.64946077108" version="1"/>
   <node id="70326" action="modify" lat="50.51170725411" lon="21.65270087957" version="1"/>
   <node id="70327" action="modify" lat="50.51294896686" lon="21.65572641134" version="1"/>
-  <node id="70328" action="modify" lat="50.51476371904" lon="21.66010377645" version="1"/>
+  <node id="70328" action="modify" lat="50.51476371904" lon="21.66010377645" version="1">
+    <tag k="name" v="Chmielów"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65706"/>
+  </node>
   <node id="70329" action="modify" lat="50.51831115341" lon="21.66890142202" version="1"/>
   <node id="70330" action="modify" lat="50.52204931497" lon="21.67802093267" version="1"/>
   <node id="70331" action="modify" lat="50.52371364978" lon="21.68201207042" version="1"/>
@@ -90263,7 +90279,7 @@
   <node id="70342" action="modify" lat="50.46055034669" lon="21.54288051367" version="1"/>
   <node id="70343" action="modify" lat="50.46602775156" lon="21.55054090261" version="1"/>
   <node id="70344" action="modify" lat="50.47054852303" lon="21.55693528891" version="1"/>
-  <node id="70345" action="modify" lat="50.47255609865" lon="21.55974624395" version="1"/>
+  <node id="70345" action="modify" lat="50.47200982801" lon="21.55894560456" version="1"/>
   <node id="70346" action="modify" lat="50.47327989752" lon="21.56090495825" version="1"/>
   <node id="70347" action="modify" lat="50.47426315371" lon="21.56292197943" version="1"/>
   <node id="70348" action="modify" lat="50.47504155035" lon="21.56575439215" version="1"/>
@@ -91281,6 +91297,22 @@
     <tag k="name" v="Runowo"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="281366"/>
+  </node>
+  <node id="71243" action="modify" lat="50.47292651046" lon="21.56028940471" version="1"/>
+  <node id="71244" action="modify" lat="50.47232476357" lon="21.55940159353" version="1">
+    <tag k="name" v="Skopanie"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65789"/>
+  </node>
+  <node id="71245" action="modify" lat="50.48651307512" lon="21.62280942425" version="1">
+    <tag k="name" v="Dąbrowica Małopolska"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65771"/>
+  </node>
+  <node id="71246" action="modify" lat="53.0325735153" lon="22.45540980555" version="1">
+    <tag k="name" v="Czarnowo-Undy"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="23523"/>
   </node>
   <way id="1" action="modify" version="1">
     <nd ref="15250"/>
@@ -111530,6 +111562,8 @@
     <nd ref="70343"/>
     <nd ref="70344"/>
     <nd ref="70345"/>
+    <nd ref="71244"/>
+    <nd ref="71243"/>
     <nd ref="70346"/>
     <nd ref="70347"/>
     <nd ref="70348"/>
@@ -111544,6 +111578,7 @@
     <nd ref="70357"/>
     <nd ref="70358"/>
     <nd ref="70359"/>
+    <nd ref="71245"/>
     <nd ref="70360"/>
     <nd ref="70361"/>
     <nd ref="70362"/>
@@ -127344,6 +127379,7 @@
     <nd ref="33605"/>
     <nd ref="33606"/>
     <nd ref="33607"/>
+    <nd ref="71246"/>
     <nd ref="33608"/>
     <nd ref="33609"/>
     <nd ref="33610"/>
