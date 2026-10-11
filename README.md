@@ -130,7 +130,8 @@ will be pulled directly from operator APIs. Agency-provided datasets sometimes h
 higher-quality data, or PKP PLK API is straight up missing some routes
 (like the Modlin Airport shuttle bus). This requires providing extra access credentials:
 
-- `KM_APIKEY` - Koleje Mazowieckie XML schedules apikey.
+- `KM_APIKEY` - Koleje Mazowieckie XML schedules apikey
+- `IC_FTP_CREDENTIALS` - PKP Intercity FTPS credentials formatted as `username,password`.
 
 
 Map Data (data/geo.osm)

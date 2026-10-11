@@ -19,6 +19,29 @@ from .task import LoadExternal
 
 CSVRow = dict[str, str]
 
+ROMAN_TO_ARABIC = {
+    "I": "1",
+    "II": "2",
+    "III": "3",
+    "IV": "4",
+    "V": "5",
+    "VI": "6",
+    "VII": "7",
+    "VIII": "8",
+    "IX": "9",
+    "X": "10",
+    "XI": "11",
+    "XII": "12",
+}
+
+# List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
+IGNORED_STOPS = (
+    "179301",  # Мостиська IІ /Mostistka/' - not in PLK API
+    "179215",  # Horka - technical station - not in PLK API
+    "179193",  # Jagodin - not in PLK API
+    "178501",  # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
+)
+
 
 class TrainKey(NamedTuple):
     date: str
@@ -36,7 +59,7 @@ CalendarLookup = defaultdict[str, list[str]]
 
 
 class CleanWaypoints(Task):
-    def execute(self, r: TaskRuntime):
+    def execute(self, r: TaskRuntime) -> None:
         with r.db.transaction():
             r.db.raw_execute(
                 """
@@ -77,7 +100,7 @@ class CleanWaypoints(Task):
 
 
 class LoadICKPD(LoadExternal):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.important_waypoints = set[str]()
         self.calendar_lookup = CalendarLookup(list)
@@ -102,7 +125,7 @@ class LoadICKPD(LoadExternal):
         else:
             return {}
 
-    def clear(self):
+    def clear(self) -> None:
         self.important_waypoints.clear()
         self.calendar_lookup.clear()
 
@@ -134,7 +157,7 @@ class LoadICKPD(LoadExternal):
                     if combined_times:
                         self.apply_combined_times(plk_trip, combined_times, r)
 
-    def load_lookup_tables(self, r: TaskRuntime):
+    def load_lookup_tables(self, r: TaskRuntime) -> None:
         self.important_waypoints = {
             cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]
         }
@@ -174,31 +197,30 @@ class LoadICKPD(LoadExternal):
     def find_kpd_match(self, kpd: KPDLookup, trip: Trip, r: TaskRuntime) -> list[KPDStop] | None:
         plk_number = trip.get_extra_field("plk_train_number")
         if not plk_number:
-            self.logger.warning("Trip %s has no plk_train_number", trip.id)
-            return
+            raise ValueError(f"Trip {trip.id} has no plk_train_number")
 
-        main_number, extra_number = get_plk_train_numbers(plk_number)
-
-        if main_number not in kpd:
-            if extra_number in kpd:
-                main_number = extra_number
-            else:
-                self.logger.warning("Train %s not found in KPD Rozklad data.", main_number)
-                return
+        for train_number in get_plk_train_numbers(plk_number):
+            kpd_train = kpd.get(train_number)
+            if kpd_train:
+                break
+        else:
+            self.logger.warning("Train %s not found in KPD Rozklad data.", plk_number)
+            return None
 
         calendar_dates_for_trip = self.calendar_lookup.get(trip.calendar_id, [])
         if not calendar_dates_for_trip:
             self.logger.warning("Trip %s has no calendar dates. Skipping.", trip.id)
-            return
+            return None
 
-        date = next((d for d in calendar_dates_for_trip if d in kpd[main_number]), None)
+        date = next((d for d in calendar_dates_for_trip if d in kpd_train), None)
         if not date:
             self.logger.warning(
-                f"Train {trip.id} / {main_number} has no stops in KPD for any of its active dates. Skipping."
+                "Train %s / %s has no stops in KPD for any of its active dates. Skipping.",
+                trip.id,
+                train_number,
             )
-            return
-        stops_from_kpd = kpd[main_number][date]
-        return stops_from_kpd
+            return None
+        return kpd_train[date]
 
     def get_plk_stop_times(self, trip: Trip, r: TaskRuntime) -> list[StopTime]:
         stops_from_plk = r.db.typed_out_execute(
@@ -226,10 +248,9 @@ class LoadICKPD(LoadExternal):
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
                 for plk, kpd in zip(plk_stop_times[i1:i2], kpd_stops[j1:j2]):
-                    stop_time, updated = merge_stop_time_with_kpd(plk, kpd)
-                    combined.append(stop_time)
-                    if updated:
+                    if merge_stop_time_with_kpd(plk, kpd):
                         updated_stops.add(plk.stop_id)
+                    combined.append(plk)
             else:
                 if tag in ("replace", "delete"):
                     for plk in plk_stop_times[i1:i2]:
@@ -247,21 +268,17 @@ class LoadICKPD(LoadExternal):
 
         return ensure_start_and_end_not_at_waypoint(combined)
 
-    def apply_combined_times(self, trip: Trip, combined: list[StopTime], r: TaskRuntime):
+    def apply_combined_times(self, trip: Trip, combined: list[StopTime], r: TaskRuntime) -> None:
         try:
-            r.db.raw_execute(
-                """
-                            DELETE FROM stop_times
-                            WHERE trip_id = ?
-                            """,
-                (trip.id,),
-            )
+            r.db.raw_execute("DELETE FROM stop_times WHERE trip_id = ?", (trip.id,))
             r.db.create_many(StopTime, combined)
         except Exception:
             self.logger.exception(
-                f"Error occurred while updating stop_times for trip {trip.id} {trip.get_extra_field('plk_train_number')}",
+                "Error occurred while updating stop_times for trip %s %s",
+                trip.id,
+                trip.get_extra_field("plk_train_number"),
             )
-            self.logger.debug(f"Stops for trip {trip.id}: {combined}")
+            self.logger.debug("Stops for trip %s: %s", trip.id, combined)
             raise
 
 
@@ -293,16 +310,15 @@ def get_plk_train_numbers(plk_number: str) -> tuple[str, str]:
     return main_number, extra_number
 
 
-def merge_stop_time_with_kpd(plk: StopTime, kpd: KPDStop) -> tuple[StopTime, bool]:
-    updated = False
+def merge_stop_time_with_kpd(plk: StopTime, kpd: KPDStop) -> bool:
     if not plk.platform:
         plk.platform = normalize_platform(kpd.departure_platform)
         plk.set_extra_field("track", kpd.departure_track)
-        updated = True
-    return plk, updated
+        return True
+    return False
 
 
-def kpd_to_stop_time(trip_id: str, kpd: KPDStop):
+def kpd_to_stop_time(trip_id: str, kpd: KPDStop) -> StopTime:
     """
     Creates an "empty" StopTime based on KPDStop. Such StopTime mustn't be exported in GTFS and must be removed via CleanWaypoints
     """
@@ -362,13 +378,6 @@ def train_rows(
 ) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
     # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
     #       For the past 5 years that was the case.
-    # List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
-    IGNORED_STOPS = (
-        "179301",  # Мостиська IІ /Mostistka/' - not in PLK API
-        "179215",  # Horka - technical station, not in PLK API
-        "179193",  # Jagodin - not in PLK API
-        "178501",  # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
-    )
     with open(filename, "r", encoding="windows-1250", newline="") as f:
         all_rows = csv.DictReader(f, delimiter=";")
         pax_rows = filter(
@@ -398,15 +407,11 @@ class FTP_TLS_Patched(FTP_TLS):
         date = resp.split(" ")[1]
 
         if len(date) == 14:
-            date = datetime.strptime(date, "%Y%m%d%H%M%S")
+            return datetime.strptime(date, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
         elif len(date) > 15:
-            date = datetime.strptime(date[:21], "%Y%m%d%H%M%S.%f")
+            return datetime.strptime(date[:21], "%Y%m%d%H%M%S.%f").replace(tzinfo=timezone.utc)
         else:
             raise ValueError(f"invalid MDTM command response {resp}")
-
-        # reinterpret date as UTC
-        date = date.replace(tzinfo=timezone.utc)
-        return date
 
     def iter_binary(self, cmd: str, blocksize: int = 8192) -> Iterator[bytes]:
         self.voidcmd("TYPE I")
@@ -435,19 +440,3 @@ class FTPResource(ConcreteResource):
             self.last_modified = current_last_modified
             self.fetch_time = datetime.now(timezone.utc)
             yield from ftp.iter_binary(f"RETR {self.filename}")
-
-
-ROMAN_TO_ARABIC = {
-    "I": "1",
-    "II": "2",
-    "III": "3",
-    "IV": "4",
-    "V": "5",
-    "VI": "6",
-    "VII": "7",
-    "VIII": "8",
-    "IX": "9",
-    "X": "10",
-    "XI": "11",
-    "XII": "12",
-}
