@@ -2,7 +2,7 @@ import csv
 import difflib
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
@@ -407,9 +407,9 @@ class FTP_TLS_Patched(FTP_TLS):
         date = resp.split(" ")[1]
 
         if len(date) == 14:
-            return datetime.strptime(date, "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+            return datetime.strptime(date, "%Y%m%d%H%M%S").replace(tzinfo=UTC)
         elif len(date) > 15:
-            return datetime.strptime(date[:21], "%Y%m%d%H%M%S.%f").replace(tzinfo=timezone.utc)
+            return datetime.strptime(date[:21], "%Y%m%d%H%M%S.%f").replace(tzinfo=UTC)
         else:
             raise ValueError(f"invalid MDTM command response {resp}")
 
@@ -438,5 +438,5 @@ class FTPResource(ConcreteResource):
                 raise InputNotModified
 
             self.last_modified = current_last_modified
-            self.fetch_time = datetime.now(timezone.utc)
+            self.fetch_time = datetime.now(UTC)
             yield from ftp.iter_binary(f"RETR {self.filename}")
