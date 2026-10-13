@@ -19,6 +19,7 @@ AGENCY_ID_NORMALIZER = {
     "Leo Express": "LEO",
     "ŁKA": "LKA",
     "PAR-WOL": "PW",
+    "RCC PL": "RCC",
 }
 
 MINUTE = 60

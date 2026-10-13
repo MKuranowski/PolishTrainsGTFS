@@ -5,16 +5,13 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/alternative"
@@ -24,7 +21,6 @@ import (
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/schedules"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/source"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/client"
-	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/http2"
 	"github.com/MKuranowski/PolishTrainsGTFS/polish_trains_gtfs/realtime/util/secret"
 )
 
@@ -87,16 +83,9 @@ func main() {
 			b.StartRun()
 			totalFacts, stats, err := run(static)
 			if err != nil {
-				if canRetry(err) {
-					nextTry := b.EndRun(backoff.Retry)
-					slog.Error("Feed update failure", "error", err, "next_try", nextTry)
-				} else if canBackoff(err) {
-					clientPool.BackoffLast()
-					nextTry := b.EndRun(backoff.Failure)
-					slog.Error("Feed update failure", "error", err, "next_try", nextTry)
-				} else {
-					log.Fatalf("Fatal error during run: %s (%#v)", err, err)
-				}
+				clientPool.BackoffLast()
+				nextTry := b.EndRun(backoff.Failure)
+				slog.Error("Feed update failure", "error", err, "next_try", nextTry)
 			} else {
 				b.EndRun(backoff.Success)
 				slog.Info("Feed updated successfully", "facts", totalFacts, "stats", stats)
@@ -200,29 +189,6 @@ func writeOutput(facts *fact.Container) error {
 	}
 
 	return nil
-}
-
-func canRetry(err error) bool {
-	// Retry when hit by:
-	// - ECONNRESET, presumably by the VPN
-	// - i/o timeout, presumably also with the VPN
-	str := err.Error()
-	return (errors.Is(err, syscall.ECONNRESET) ||
-		errors.Is(err, os.ErrDeadlineExceeded) ||
-		strings.Contains(str, "connection reset by peer"))
-}
-
-func canBackoff(err error) bool {
-	// Only backoff on 429, 500 i 503 HTTP errors
-	if httpErr, ok := err.(*http2.Error); ok {
-		switch httpErr.StatusCode {
-		case 429, 500, 503:
-			return true
-		}
-	}
-
-	str := err.Error()
-	return strings.Contains(str, "i/o timeout")
 }
 
 func initJsonOutput() {
