@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Marcin Kasznia, Mikołaj Kuranowski
+# SPDX-License-Identifier: MIT
+
 import csv
 import difflib
 from collections import defaultdict
