@@ -11,12 +11,13 @@ from itertools import groupby
 from operator import itemgetter
 from typing import NamedTuple, cast
 
-from impuls import LocalResource, Task, TaskRuntime
+from impuls import DBConnection, LocalResource, Task, TaskRuntime
 from impuls.errors import InputNotModified
 from impuls.model import CalendarException, Stop, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 from impuls.tools.types import StrPath
 
+from ..util import describe
 from ..util.apikey import get_apikey
 from .task import LoadExternal
 
@@ -154,7 +155,7 @@ class LoadICKPD(LoadExternal):
                         100 * (i + 1) / total_trips,
                     )
 
-                if kpd_times := self.find_kpd_match(kpd, plk_trip, r):
+                if kpd_times := self.find_kpd_match(kpd, plk_trip, r.db):
                     plk_times = self.get_plk_stop_times(plk_trip, r)
                     combined_times = self.enhance_items(plk_times, kpd_times, r)
                     if combined_times:
@@ -197,7 +198,7 @@ class LoadICKPD(LoadExternal):
             "SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip
         ).all()
 
-    def find_kpd_match(self, kpd: KPDLookup, trip: Trip, r: TaskRuntime) -> list[KPDStop] | None:
+    def find_kpd_match(self, kpd: KPDLookup, trip: Trip, db: DBConnection) -> list[KPDStop] | None:
         plk_number = trip.get_extra_field("plk_train_number")
         if not plk_number:
             raise ValueError(f"Trip {trip.id} has no plk_train_number")
@@ -207,20 +208,22 @@ class LoadICKPD(LoadExternal):
             if kpd_train:
                 break
         else:
-            self.logger.warning("Train %s not found in KPD Rozklad data.", plk_number)
+            self.logger.warning(
+                "%s not found in KPD Rozklad data - skipping",
+                describe.trip(db, trip.id),
+            )
             return None
 
         calendar_dates_for_trip = self.calendar_lookup.get(trip.calendar_id, [])
         if not calendar_dates_for_trip:
-            self.logger.warning("Trip %s has no calendar dates. Skipping.", trip.id)
+            self.logger.warning("%s has no calendar dates - skipping", describe.trip(db, trip.id))
             return None
 
         date = next((d for d in calendar_dates_for_trip if d in kpd_train), None)
         if not date:
             self.logger.warning(
-                "Train %s / %s has no stops in KPD for any of its active dates. Skipping.",
-                trip.id,
-                train_number,
+                "%s has no stops in KPD for any of its active dates - skipping",
+                describe.trip(db, trip.id),
             )
             return None
         return kpd_train[date]
