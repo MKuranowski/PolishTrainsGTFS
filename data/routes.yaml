@@ -804,6 +804,17 @@ agencies:
         long_name: "PolRegio"
         color: "E50000"
 
+  - id: "RCC"
+    name: "Rail Cargo Carrier - Poland"
+    url: "https://www.railcargo.com/pl/"
+    phone: "+48 22 648 11 30"
+    routes:
+      - id: "RCC_EX"
+        match: [{}]
+        short_name: "RCC Ex"
+        long_name: "Rail Cargo Carrier - Express"
+        color: "E2002A"
+
   - id: "RJ"
     name: "RegioJet"
     url: "https://regiojet.pl/"

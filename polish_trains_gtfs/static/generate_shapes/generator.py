@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 import logging
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from itertools import pairwise
 
 import routx
@@ -53,11 +53,12 @@ class ShapeGenerator:
 
         return shape
 
-    def generate_leg(self, from_: int, to: int) -> list[int]:
+    def generate_leg(self, from_: int, to: int) -> Sequence[int]:
+        nodes: Sequence[int] = []
         try:
             nodes = self.graph.find_route(from_, to, without_turn_around=False)
         except routx.StepLimitExceeded:
-            nodes = []
+            pass
 
         if not nodes:
             logger.error("No shape between nodes %d and %d", from_, to)

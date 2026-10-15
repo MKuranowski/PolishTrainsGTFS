@@ -38,6 +38,7 @@
     - [76687, 76711]  # Hucisko -> Kurów Suski
     - [179275, 82404]  # Plaveč -> Muszyna
     - [80333, 235879]  # Kraków Mydlniki -> Kraków Lotnisko, some weird replacement buses
+    - [79384, 79467]  # Słomniki -> Miechów
   force_for_conflicting: true
 
 
@@ -67,6 +68,7 @@
     - [59352, 242927] # Siedlec Trzebnicki -> Pierwoszów Miłocin
     - [55632, 55277]  # Sędzisław -> Kamienna Góra
     - [51995, 51847]  # Jerzmanki -> Zgorzelec
+    - [56408, 57703]  # Kamieniec Ząbkowicki -> Ząbkowice Śląskie
   pairs_to_ignore:
     - [58347, 58172]  # Jelcz-Laskowice - Jelcz Miłoszyce
   force_for_conflicting: true

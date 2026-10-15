@@ -233,6 +233,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83261"/>
     <tag k="ref:ibnr" v="57"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="40" action="modify" lat="49.73760818105" lon="21.47056255334" version="1">
     <tag k="name" v="Jasło"/>
@@ -431,6 +432,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83022"/>
     <tag k="ref:ibnr" v="107"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="73" action="modify" lat="52.98997579471" lon="22.88359562683" version="1">
     <tag k="name" v="Łapy"/>
@@ -697,6 +699,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83105"/>
     <tag k="ref:ibnr" v="163"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="117" action="modify" lat="51.37805592715" lon="20.6587555324" version="1">
     <tag k="name" v="Przysucha"/>
@@ -775,6 +778,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82669"/>
     <tag k="ref:ibnr" v="178"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="130" action="modify" lat="50.6605739154" lon="21.76532525756" version="1">
     <tag k="name" v="Sandomierz"/>
@@ -5034,6 +5038,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83030"/>
     <tag k="ref:ibnr" v="3075"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="836" action="modify" lat="50.10001865479" lon="22.52112912415" version="1">
     <tag k="name" v="Gniewczyna"/>
@@ -5076,6 +5081,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83063"/>
     <tag k="ref:ibnr" v="3086"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="843" action="modify" lat="50.19439523848" lon="23.35696337607" version="1">
     <tag k="name" v="Horyniec-Zdrój"/>
@@ -5334,6 +5340,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82651"/>
     <tag k="ref:ibnr" v="3144"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="886" action="modify" lat="50.13093009818" lon="19.63411147213" version="1">
     <tag k="name" v="Krzeszowice"/>
@@ -5424,6 +5431,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83048"/>
     <tag k="ref:ibnr" v="3168"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="901" action="modify" lat="50.35364233862" lon="20.01075667005" version="1">
     <tag k="name" v="Miechów"/>
@@ -5478,6 +5486,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="84707"/>
     <tag k="ref:ibnr" v="3186"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="910" action="modify" lat="49.3579786409" lon="20.89654897887" version="1">
     <tag k="name" v="Muszyna Zdrój"/>
@@ -5562,12 +5571,14 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="84319"/>
     <tag k="ref:ibnr" v="3210"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="924" action="modify" lat="50.04777639932" lon="22.61164697961" version="1">
     <tag k="name" v="Pełkinie"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="83279"/>
     <tag k="ref:ibnr" v="3211"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="925" action="modify" lat="49.43172200161" lon="20.71710852298" version="1">
     <tag k="name" v="Piwniczna"/>
@@ -5682,6 +5693,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="84301"/>
     <tag k="ref:ibnr" v="3245"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="944" action="modify" lat="49.91813026674" lon="19.80927797377" version="1">
     <tag k="name" v="Radziszów"/>
@@ -5694,6 +5706,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="83055"/>
     <tag k="ref:ibnr" v="3250"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="946" action="modify" lat="49.5786517269" lon="19.90594662529" version="1">
     <tag k="name" v="Rokiciny Podhalańskie"/>
@@ -5742,12 +5755,14 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82677"/>
     <tag k="ref:ibnr" v="3259"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="954" action="modify" lat="50.03856877442" lon="21.98971295542" version="1">
     <tag k="name" v="Rzeszów Staroniwa"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="82602"/>
     <tag k="ref:ibnr" v="3260"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="955" action="modify" lat="49.98479053839" lon="20.51508048839" version="1">
     <tag k="name" v="Rzezawa"/>
@@ -5868,6 +5883,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82636"/>
     <tag k="ref:ibnr" v="3286"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="975" action="modify" lat="49.83354894951" lon="19.66954550477" version="1">
     <tag k="name" v="Stronie"/>
@@ -6126,6 +6142,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82644"/>
     <tag k="ref:ibnr" v="3345"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="1018" action="modify" lat="50.27243647451" lon="21.76212270349" version="1">
     <tag k="name" v="Zarębki"/>
@@ -6168,6 +6185,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="82735"/>
     <tag k="ref:ibnr" v="3355"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="1025" action="modify" lat="49.36748210209" lon="20.78524181085" version="1">
     <tag k="name" v="Żegiestów"/>
@@ -6192,6 +6210,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="241561"/>
     <tag k="ref:ibnr" v="3360"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="1029" action="modify" lat="49.89819236475" lon="19.75341793491" version="1">
     <tag k="name" v="Podolany"/>
@@ -6252,6 +6271,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="261251"/>
     <tag k="ref:ibnr" v="3380"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="1039" action="modify" lat="51.07852483401" lon="23.19047218651" version="1">
     <tag k="name" v="Zagrody Kościół"/>
@@ -14038,7 +14058,7 @@
     <tag k="ref:ibnr" v="1343"/>
     <tag k="wheelchair" v="yes"/>
   </node>
-  <node id="3121" action="modify" lat="51.55159233813" lon="21.84166787982" version="1"/>
+  <node id="3121" action="modify" lat="51.55157460314" lon="21.84169164779" version="1"/>
   <node id="3122" action="modify" lat="51.67465762487" lon="21.74520491481" version="1"/>
   <node id="3123" action="modify" lat="52.36747017115" lon="21.28657936513" version="1"/>
   <node id="3124" action="modify" lat="52.53790122948" lon="19.69658731878" version="1"/>
@@ -16803,7 +16823,7 @@
   <node id="5702" action="modify" lat="51.35956227411" lon="21.13361834407" version="1"/>
   <node id="5703" action="modify" lat="52.16262644885" lon="19.77289079547" version="1"/>
   <node id="5704" action="modify" lat="53.39333571697" lon="19.84678027868" version="1"/>
-  <node id="5705" action="modify" lat="51.55098524631" lon="21.83709739566" version="1"/>
+  <node id="5705" action="modify" lat="51.55096751108" lon="21.83658400745" version="1"/>
   <node id="5706" action="modify" lat="52.18086609459" lon="22.44801877856" version="1"/>
   <node id="5707" action="modify" lat="52.68371268995" lon="20.25903043986" version="1"/>
   <node id="5708" action="modify" lat="54.27259225451" lon="18.64454982519" version="1"/>
@@ -17484,7 +17504,7 @@
   <node id="6324" action="modify" lat="52.0867979285" lon="21.35447143435" version="1"/>
   <node id="6325" action="modify" lat="52.26837404265" lon="21.03411107987" version="1"/>
   <node id="6326" action="modify" lat="54.60980762334" lon="18.17224500418" version="1"/>
-  <node id="6327" action="modify" lat="51.55117204465" lon="21.83962940097" version="1"/>
+  <node id="6327" action="modify" lat="51.55116613293" lon="21.8396935745" version="1"/>
   <node id="6328" action="modify" lat="51.67361970893" lon="21.74693225741" version="1"/>
   <node id="6329" action="modify" lat="52.37068003104" lon="21.29404127061" version="1"/>
   <node id="6330" action="modify" lat="52.53769893325" lon="19.69572364748" version="1"/>
@@ -18240,11 +18260,11 @@
   <node id="6929" action="modify" lat="54.57992206917" lon="16.84596775889" version="1"/>
   <node id="6930" action="modify" lat="52.59713714543" lon="20.44173716426" version="1"/>
   <node id="6931" action="modify" lat="51.55529475568" lon="21.84717177272" version="1"/>
-  <node id="6932" action="modify" lat="51.5524729471" lon="21.84433934927" version="1"/>
+  <node id="6932" action="modify" lat="51.55258822214" lon="21.84444868194" version="1"/>
   <node id="6933" action="modify" lat="51.55177914065" lon="21.84367416143" version="1"/>
   <node id="6934" action="modify" lat="51.55095189605" lon="21.84326646566" version="1"/>
-  <node id="6935" action="modify" lat="51.54928401847" lon="21.84313771963" version="1"/>
-  <node id="6936" action="modify" lat="51.54765611098" lon="21.84384582281" version="1"/>
+  <node id="6935" action="modify" lat="51.54929402592" lon="21.84319136381" version="1"/>
+  <node id="6936" action="modify" lat="51.54778954821" lon="21.84382972956" version="1"/>
   <node id="6937" action="modify" lat="51.54229162354" lon="21.84702153683" version="1"/>
   <node id="6938" action="modify" lat="51.54063675425" lon="21.8480300796" version="1"/>
   <node id="6939" action="modify" lat="51.53846800986" lon="21.85019730449" version="1"/>
@@ -23144,12 +23164,7 @@
   <node id="11475" action="modify" lat="52.89612114898" lon="23.80636452556" version="1"/>
   <node id="11476" action="modify" lat="52.89718906514" lon="23.80818842769" version="1"/>
   <node id="11477" action="modify" lat="52.89802396309" lon="23.81026982188" version="1"/>
-  <node id="11478" action="modify" lat="52.73333256881" lon="23.58287750602" version="1">
-    <tag k="platforms" v="3;4;5"/>
-    <tag k="public_transport" v="stop_position"/>
-    <tag k="ref:station" v="25403"/>
-    <tag k="towards" v="fallback"/>
-  </node>
+  <node id="11478" action="modify" lat="52.73333256881" lon="23.58287750602" version="1"/>
   <node id="11479" action="modify" lat="52.73414138602" lon="23.58224986911" version="1"/>
   <node id="11480" action="modify" lat="52.73521978562" lon="23.58098386645" version="1"/>
   <node id="11481" action="modify" lat="52.73615524319" lon="23.57949255824" version="1"/>
@@ -31605,6 +31620,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280247"/>
     <tag k="ref:ibnr" v="6628"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="19184" action="modify" lat="50.04296429041" lon="21.99952661455" version="1"/>
   <node id="19185" action="modify" lat="50.04290572369" lon="22.00134515226" version="1"/>
@@ -31798,6 +31814,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280258"/>
     <tag k="ref:ibnr" v="6638"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="19368" action="modify" lat="50.07745455816" lon="21.9700276798" version="1"/>
   <node id="19369" action="modify" lat="50.07693471926" lon="21.97148680151" version="1"/>
@@ -31811,6 +31828,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280257"/>
     <tag k="ref:ibnr" v="6637"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="19376" action="modify" lat="50.063317064" lon="21.99041246831" version="1"/>
   <node id="19377" action="modify" lat="50.06265243724" lon="21.99104546964" version="1"/>
@@ -32774,6 +32792,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280246"/>
     <tag k="ref:ibnr" v="6629"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="20324" action="modify" lat="50.02635259489" lon="21.98252140939" version="1"/>
   <node id="20325" action="modify" lat="50.02715557399" lon="21.98354601324" version="1"/>
@@ -45545,12 +45564,14 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280254"/>
     <tag k="ref:ibnr" v="6626"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="31949" action="modify" lat="50.05245355583" lon="22.03183935316" version="1">
     <tag k="name" v="Rzeszów Pobitno"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="280256"/>
     <tag k="ref:ibnr" v="6627"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="31950" action="modify" lat="50.77740729472" lon="19.67327822356" version="1">
     <tag k="name" v="Koniecpol Centrum"/>
@@ -46778,6 +46799,7 @@
     <tag k="railway" v="station"/>
     <tag k="ref" v="280420"/>
     <tag k="ref:ibnr" v="6647"/>
+    <tag k="wheelchair" v="yes"/>
   </node>
   <node id="33045" action="modify" lat="50.11348871411" lon="21.98591172159" version="1">
     <tag k="name" v="Głogów Małopolski Południowy"/>
@@ -81631,7 +81653,12 @@
     <tag k="ref" v="25403"/>
     <tag k="ref:ibnr" v="423"/>
   </node>
-  <node id="64063" action="modify" lat="52.73283882238" lon="23.58317791879" version="1"/>
+  <node id="64063" action="modify" lat="52.73283882238" lon="23.58317791879" version="1">
+    <tag k="platforms" v="3;4;5"/>
+    <tag k="public_transport" v="stop_position"/>
+    <tag k="ref:station" v="25403"/>
+    <tag k="towards" v="fallback"/>
+  </node>
   <node id="64064" action="modify" lat="52.73233857687" lon="23.58349441946" version="1"/>
   <node id="64065" action="modify" lat="52.73183182882" lon="23.58384847105" version="1"/>
   <node id="64066" action="modify" lat="52.73139329209" lon="23.58433663309" version="1"/>
@@ -90245,7 +90272,11 @@
   <node id="70325" action="modify" lat="50.51039727999" lon="21.64946077108" version="1"/>
   <node id="70326" action="modify" lat="50.51170725411" lon="21.65270087957" version="1"/>
   <node id="70327" action="modify" lat="50.51294896686" lon="21.65572641134" version="1"/>
-  <node id="70328" action="modify" lat="50.51476371904" lon="21.66010377645" version="1"/>
+  <node id="70328" action="modify" lat="50.51476371904" lon="21.66010377645" version="1">
+    <tag k="name" v="Chmielów"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65706"/>
+  </node>
   <node id="70329" action="modify" lat="50.51831115341" lon="21.66890142202" version="1"/>
   <node id="70330" action="modify" lat="50.52204931497" lon="21.67802093267" version="1"/>
   <node id="70331" action="modify" lat="50.52371364978" lon="21.68201207042" version="1"/>
@@ -90262,7 +90293,11 @@
   <node id="70342" action="modify" lat="50.46055034669" lon="21.54288051367" version="1"/>
   <node id="70343" action="modify" lat="50.46602775156" lon="21.55054090261" version="1"/>
   <node id="70344" action="modify" lat="50.47054852303" lon="21.55693528891" version="1"/>
-  <node id="70345" action="modify" lat="50.47255609865" lon="21.55974624395" version="1"/>
+  <node id="70345" action="modify" lat="50.47255609865" lon="21.55974624395" version="1">
+    <tag k="name" v="Skopanie"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65789"/>
+  </node>
   <node id="70346" action="modify" lat="50.47327989752" lon="21.56090495825" version="1"/>
   <node id="70347" action="modify" lat="50.47426315371" lon="21.56292197943" version="1"/>
   <node id="70348" action="modify" lat="50.47504155035" lon="21.56575439215" version="1"/>
@@ -90290,6 +90325,379 @@
   <node id="70370" action="modify" lat="50.51108637867" lon="21.65158509135" version="1"/>
   <node id="70371" action="modify" lat="50.5114957401" lon="21.65239512384" version="1"/>
   <node id="70372" action="modify" lat="50.51173453462" lon="21.65296911657" version="1"/>
+  <node id="70373" action="modify" lat="51.54853010773" lon="21.84328257501" version="1"/>
+  <node id="70374" action="modify" lat="51.55016131969" lon="21.8431001848" version="1"/>
+  <node id="70375" action="modify" lat="51.54860349685" lon="21.84343277872" version="1"/>
+  <node id="70376" action="modify" lat="51.54887703705" lon="21.84300362527" version="1"/>
+  <node id="70377" action="modify" lat="51.54913723231" lon="21.84276759088" version="1"/>
+  <node id="70378" action="modify" lat="51.54947081379" lon="21.84240817487" version="1"/>
+  <node id="70379" action="modify" lat="51.54980439283" lon="21.84195219934" version="1"/>
+  <node id="70380" action="modify" lat="51.55010461188" lon="21.84143721521" version="1"/>
+  <node id="70381" action="modify" lat="51.55029721254" lon="21.84100575867" version="1"/>
+  <node id="70382" action="modify" lat="51.55045978759" lon="21.84059219595" version="1"/>
+  <node id="70383" action="modify" lat="51.55063418563" lon="21.84006930055" version="1"/>
+  <node id="70384" action="modify" lat="51.55074798738" lon="21.83950837639" version="1"/>
+  <node id="70385" action="modify" lat="51.55084405357" lon="21.83899974177" version="1"/>
+  <node id="70386" action="modify" lat="51.55090908288" lon="21.8383603833" version="1"/>
+  <node id="70387" action="modify" lat="51.55093864163" lon="21.83771389444" version="1"/>
+  <node id="70388" action="modify" lat="51.55103175155" lon="21.83795632777" version="1"/>
+  <node id="70389" action="modify" lat="51.55107313368" lon="21.83876681564" version="1"/>
+  <node id="70390" action="modify" lat="51.55133472696" lon="21.84070152862" version="1"/>
+  <node id="70391" action="modify" lat="51.55186529856" lon="21.84252690893" version="1"/>
+  <node id="70392" action="modify" lat="51.55277863572" lon="21.84435228924" version="1"/>
+  <node id="70393" action="modify" lat="51.55056324413" lon="21.84315676021" version="1"/>
+  <node id="70394" action="modify" lat="51.54971489351" lon="21.84311160106" version="1"/>
+  <node id="70395" action="modify" lat="51.55216235683" lon="21.84401953762" version="1"/>
+  <node id="70396" action="modify" lat="50.4863975482" lon="21.62260015518" version="1">
+    <tag k="name" v="Dąbrowica Małopolska"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="65771"/>
+  </node>
+  <node id="70397" action="modify" lat="50.06723089013" lon="22.50278959645" version="1">
+    <tag k="name" v="1;2"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="83105"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70398" action="modify" lat="50.06701293348" lon="22.50226779607" version="1">
+    <tag k="name" v="ul. Lubomirskich"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83105"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70399" action="modify" lat="50.06730956813" lon="22.50280819958" version="1">
+    <tag k="name" v="2;4"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="83105"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70400" action="modify" lat="50.06735936838" lon="22.50281768726" version="1">
+    <tag k="name" v="2;6"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="83105"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70401" action="modify" lat="50.04699014736" lon="22.61263333194" version="1">
+    <tag k="name" v="Wierzbna"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83279"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70402" action="modify" lat="50.04707325312" lon="22.61278722402" version="1">
+    <tag k="name" v="Pełkinie - Parking"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83279"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70403" action="modify" lat="50.04850541055" lon="22.61078595847" version="1">
+    <tag k="name" v="Pełkinie"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83279"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70404" action="modify" lat="50.01070905469" lon="22.67831593484" version="1">
+    <tag k="name" v="Plac Więźniów KL Auschwitz (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83261"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70405" action="modify" lat="50.01100897871" lon="22.67742275923" version="1">
+    <tag k="name" v="Plac Więźniów KL Auschwitz (Centrum Przesiadkowe)"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83261"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70406" action="modify" lat="50.01009368748" lon="22.67702847451" version="1">
+    <tag k="name" v="ul. Elektrowniana"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83261"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70407" action="modify" lat="49.9896890281" lon="22.71972655982" version="1">
+    <tag k="name" v="ul. Kolejowa"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="84707"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70408" action="modify" lat="49.93934294525" lon="22.82998412579" version="1">
+    <tag k="name" v="ul. Kolejowa"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="84301"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70409" action="modify" lat="49.95404157515" lon="22.78535216779" version="1">
+    <tag k="name" v="peron 2"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="84319"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70410" action="modify" lat="49.95359460686" lon="22.78535484999" version="1">
+    <tag k="name" v="peron 1"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="84319"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70411" action="modify" lat="50.07983076727" lon="22.4543702589" version="1">
+    <tag k="name" v="peron 2"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83063"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70412" action="modify" lat="50.07969220922" lon="22.45431124896" version="1">
+    <tag k="name" v="peron 1"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83063"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70413" action="modify" lat="50.08383503285" lon="22.36305713519" version="1">
+    <tag k="name" v="Dworzec - Kładka"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83055"/>
+    <tag k="wheelchair" v="no"/>
+  </node>
+  <node id="70414" action="modify" lat="50.08370939452" lon="22.36358552903" version="1">
+    <tag k="name" v="Dworzec"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83055"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70415" action="modify" lat="50.08368185713" lon="22.32440918416" version="1">
+    <tag k="name" v="ul. Powstańców Państwa Polskiego (peron 2)"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83048"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70416" action="modify" lat="50.08344950969" lon="22.32444137067" version="1">
+    <tag k="name" v="ul. Powstańców Państwa Polskiego (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83048"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70417" action="modify" lat="50.08336087229" lon="22.2778742002" version="1">
+    <tag k="name" v="ul. Do PKP (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83030"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70418" action="modify" lat="50.08354244794" lon="22.27786883578" version="1">
+    <tag k="name" v="ul. Do PKP (peron 2)"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83030"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70419" action="modify" lat="50.0833617337" lon="22.28086083859" version="1">
+    <tag k="name" v="peron 1"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83030"/>
+    <tag k="wheelchair" v="no"/>
+  </node>
+  <node id="70420" action="modify" lat="50.08158939748" lon="22.22794622116" version="1">
+    <tag k="name" v="ul. Kolejowa"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="83022"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70421" action="modify" lat="50.08195643453" lon="22.18891203269" version="1">
+    <tag k="name" v="peron 2"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82651"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70422" action="modify" lat="50.08175419985" lon="22.18894421786" version="1">
+    <tag k="name" v="peron 1"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82651"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70423" action="modify" lat="50.06790290723" lon="22.11626842484" version="1">
+    <tag k="name" v="ul. Zakącina"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82636"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70425" action="modify" lat="50.05833751688" lon="22.06784181263" version="1">
+    <tag k="name" v="ul. Agatowa"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82644"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70426" action="modify" lat="50.05817457321" lon="22.06791758403" version="1">
+    <tag k="name" v="Krasne - Wólka"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82644"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70427" action="modify" lat="50.05868686742" lon="22.07134008139" version="1">
+    <tag k="name" v="Krasne - Parking (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82644"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70428" action="modify" lat="50.0523977643" lon="22.03248023853" version="1">
+    <tag k="name" v="ul. Załęska - Asseco"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280256"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70429" action="modify" lat="50.05261476239" lon="22.03265592322" version="1">
+    <tag k="name" v="ul. Załęska"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280256"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70430" action="modify" lat="50.04266284158" lon="22.00599074095" version="1">
+    <tag k="name" v="Pl. Dworcowy"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82669"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70431" action="modify" lat="50.04403957988" lon="22.00520619214" version="1">
+    <tag k="name" v="ul. Jana Kochanowskiego"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82669"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70432" action="modify" lat="50.04276447167" lon="22.00554281339" version="1">
+    <tag k="name" v="Pl. Dworcowy - Zachód"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82669"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70433" action="modify" lat="50.04271193366" lon="22.00701400504" version="1">
+    <tag k="name" v="Pl. Dworcowy - Dworzec"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82669"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70434" action="modify" lat="50.04300476772" lon="21.99820026621" version="1">
+    <tag k="name" v="ul. Stefana Czarnieckiego"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280247"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70435" action="modify" lat="50.04305299904" lon="21.99843093619" version="1">
+    <tag k="name" v="1"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="280247"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70436" action="modify" lat="50.03898417224" lon="21.9901321815" version="1">
+    <tag k="name" v="ul. ks. Józefa Sondeja"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82602"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70437" action="modify" lat="50.02764148785" lon="21.98415621981" version="1">
+    <tag k="name" v="ul. Hanasiewicza"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280246"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70438" action="modify" lat="50.02151935637" lon="21.97743192248" version="1">
+    <tag k="name" v="ul. Zawiszy Czarnego"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82677"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70439" action="modify" lat="50.00641467735" lon="21.95759028129" version="1">
+    <tag k="name" v="ul. Beskidzka"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="82735"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70440" action="modify" lat="50.05435157286" lon="21.99380949005" version="1">
+    <tag k="name" v="Al. Wyzwolenia (peron 2)"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="261251"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70441" action="modify" lat="50.0537569994" lon="21.99432078715" version="1">
+    <tag k="name" v="ul. Kornela Ujejskiego - K+R (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="261251"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70442" action="modify" lat="50.05219109854" lon="21.99463158712" version="1">
+    <tag k="name" v="ul. Kornela Ujejskiego - Osiedle (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="261251"/>
+    <tag k="wheelchair" v="no"/>
+  </node>
+  <node id="70443" action="modify" lat="50.06238899154" lon="21.99258305065" version="1">
+    <tag k="name" v="ul. Warszawska (południe)"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280254"/>
+    <tag k="wheelchair" v="no"/>
+  </node>
+  <node id="70444" action="modify" lat="50.06319309115" lon="21.99242412776" version="1">
+    <tag k="name" v="ul. Warszawska (północ)"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280254"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70445" action="modify" lat="50.07536569809" lon="21.98741376333" version="1">
+    <tag k="name" v="ul. Warszawska"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="241561"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70446" action="modify" lat="50.07623757287" lon="21.98704227671" version="1">
+    <tag k="name" v="ul. Myśliwska"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="241561"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70447" action="modify" lat="50.11553548947" lon="22.02314883202" version="1">
+    <tag k="name" v="Lotnisko / Airport"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280420"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70448" action="modify" lat="50.06312077365" lon="21.99083760247" version="1">
+    <tag k="name" v="ul. Miłocińska (peron 2)"/>
+    <tag k="platforms" v="2"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280257"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70449" action="modify" lat="50.06301229934" lon="21.99049293727" version="1">
+    <tag k="name" v="ul. Miłocińska (peron 1)"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280257"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="70450" action="modify" lat="50.07763529295" lon="21.96873620018" version="1">
+    <tag k="name" v="ul. Biznesowa"/>
+    <tag k="platforms" v="1"/>
+    <tag k="railway" v="subway_entrance"/>
+    <tag k="ref:station" v="280258"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="90396" action="modify" lat="50.06718108975" lon="22.50278010877" version="1">
+    <tag k="name" v="1;1"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="83105"/>
+    <tag k="wheelchair" v="yes"/>
+  </node>
   <way id="1" action="modify" version="1">
     <nd ref="15250"/>
     <nd ref="15249"/>
@@ -91007,9 +91415,14 @@
   </way>
   <way id="9" action="modify" version="1">
     <nd ref="5950"/>
+    <nd ref="70392"/>
     <nd ref="4543"/>
+    <nd ref="70391"/>
     <nd ref="3121"/>
+    <nd ref="70390"/>
     <nd ref="6327"/>
+    <nd ref="70389"/>
+    <nd ref="70388"/>
     <nd ref="5705"/>
     <nd ref="4292"/>
     <nd ref="2880"/>
@@ -96163,9 +96576,14 @@
   <way id="50" action="modify" version="1">
     <nd ref="5950"/>
     <nd ref="6932"/>
+    <nd ref="70395"/>
     <nd ref="6933"/>
     <nd ref="6934"/>
+    <nd ref="70393"/>
+    <nd ref="70374"/>
+    <nd ref="70394"/>
     <nd ref="6935"/>
+    <nd ref="70375"/>
     <nd ref="6936"/>
     <nd ref="6937"/>
     <nd ref="6938"/>
@@ -110535,6 +110953,7 @@
     <nd ref="70357"/>
     <nd ref="70358"/>
     <nd ref="70359"/>
+    <nd ref="70396"/>
     <nd ref="70360"/>
     <nd ref="70361"/>
     <nd ref="70362"/>
@@ -162507,6 +162926,24 @@
     <nd ref="70335"/>
     <nd ref="70336"/>
     <nd ref="70337"/>
+    <tag k="railway" v="rail"/>
+  </way>
+  <way id="550" action="modify" version="1">
+    <nd ref="6936"/>
+    <nd ref="70373"/>
+    <nd ref="70376"/>
+    <nd ref="70377"/>
+    <nd ref="70378"/>
+    <nd ref="70379"/>
+    <nd ref="70380"/>
+    <nd ref="70381"/>
+    <nd ref="70382"/>
+    <nd ref="70383"/>
+    <nd ref="70384"/>
+    <nd ref="70385"/>
+    <nd ref="70386"/>
+    <nd ref="70387"/>
+    <nd ref="5705"/>
     <tag k="railway" v="rail"/>
   </way>
 </osm>

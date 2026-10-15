@@ -92,9 +92,8 @@ class LoadBusStops(Task):
         q = cast(
             Iterable[tuple[str, int, str]],
             db.raw_execute(
-                "SELECT trip_id, stop_sequence, coalesce(parent_station, stop_id) "
+                "SELECT trip_id, stop_sequence, stop_id "
                 "FROM stop_times "
-                "LEFT JOIN stops USING (stop_id) "
                 "LEFT JOIN trips USING (trip_id) "
                 "LEFT JOIN routes USING (route_id) "
                 "WHERE routes.type = 3 "
@@ -105,11 +104,12 @@ class LoadBusStops(Task):
             yield Trip(id=trip_id, stop_times=[StopTime(r[1], r[2]) for r in rows])
 
     def group_bus_trips(self, trips: Iterable[Trip]) -> dict[str, list[tuple[int, Trip]]]:
-        by_stop = dict[str, list[tuple[int, Trip]]]()
+        by_station = dict[str, list[tuple[int, Trip]]]()
         for trip in trips:
             for offset, stop_time in enumerate(trip.stop_times):
-                by_stop.setdefault(stop_time.id, []).append((offset, trip))
-        return by_stop
+                station_id = stop_time.id.partition("_")[0]
+                by_station.setdefault(station_id, []).append((offset, trip))
+        return by_station
 
     def warn_about_uncurated_stations(self, db: DBConnection, ids: list[str]) -> None:
         if not ids:

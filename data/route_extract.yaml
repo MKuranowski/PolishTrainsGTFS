@@ -297,13 +297,16 @@ KM:
     - route_code: 'R1'
       select:
         - {number: '11252/3'}
+        - {number: '19208/9'}
+        - {number: '99200/1'}
     - route_code: 'R2'
       select:
         - {number: '11246'}
         - {number: '19251'}
     - route_code: 'R3'
       select:
-        - {number: '19226/7'}
+        - {number: '19212/3'}
+        - {number: '19216/7'}
         - {number: '19226/7'}
     - route_code: 'R7'
       select:
@@ -317,8 +320,11 @@ KM:
         - {number: '19213'}
         - {number: '19215'}
         - {number: '19217'}
+        - {number: '19219'}
+        - {number: '19227'}
         - {number: '19228'}
         - {number: '19242'}
         - {number: '19248/9'}
+        - {number: '19253'}
     - route_code: ''
       select: [{retain: true}]

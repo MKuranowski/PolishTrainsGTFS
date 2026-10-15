@@ -56,7 +56,7 @@ class RouteMatcher:
         return self.id is not None and not self.id.fullmatch(r.id)
 
     def short_name_mismatch(self, r: Route) -> bool:
-        return self.short_name is not None and not self.short_name.fullmatch(r.id)
+        return self.short_name is not None and not self.short_name.fullmatch(r.short_name)
 
     def matches(self, r: Route) -> bool:
         return not (self.route_mismatch(r) or self.short_name_mismatch(r))
