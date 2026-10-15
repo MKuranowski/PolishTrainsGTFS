@@ -143,23 +143,36 @@ class LoadICKPD(LoadExternal):
 
         trips = self.get_trips_to_process(r)
         total_trips = len(trips)
+        matched = 0
+        curated = 0
         self.logger.info("Processing KPD and PLK schedules for %d trips", total_trips)
 
         with r.db.transaction():
             for i, plk_trip in enumerate(trips):
-                if (i + 1) % 500 == 0:
+                if i % 500 == 0:
                     self.logger.info(
                         "Processed %d / %d (%.2f %%) trips",
-                        i + 1,
+                        i,
                         total_trips,
-                        100 * (i + 1) / total_trips,
+                        100 * i / total_trips,
                     )
 
                 if kpd_times := self.find_kpd_match(kpd, plk_trip, r.db):
+                    matched += 1
                     plk_times = self.get_plk_stop_times(plk_trip, r)
                     combined_times = self.enhance_items(plk_times, kpd_times, r)
                     if combined_times:
+                        curated += 1
                         self.apply_combined_times(plk_trip, combined_times, r)
+
+        self.logger.info(
+            "Processed all %d trips, matched %d (%.2f %%), curated %d (%.2f %%)",
+            total_trips,
+            matched,
+            100 * matched / total_trips,
+            curated,
+            100 * curated / total_trips,
+        )
 
     def load_lookup_tables(self, r: TaskRuntime) -> None:
         self.important_waypoints = {
