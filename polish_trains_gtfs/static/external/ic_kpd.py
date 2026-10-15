@@ -321,11 +321,8 @@ def get_plk_train_numbers(plk_number: str) -> tuple[str, str]:
     if slash_number:
         extra_number = main_number[:-1] + slash_number
     else:
-        main_int = int(main_number)
-        if main_int % 2 == 0:
-            extra_number = str(main_int + 1)
-        else:
-            extra_number = str(main_int - 1)
+        # flip last bit: odd -> lower even; even -> higher odd
+        extra_number = str(int(main_number) ^ 1)
     return main_number, extra_number
 
 
