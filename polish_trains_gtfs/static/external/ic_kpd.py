@@ -147,6 +147,7 @@ class LoadICKPD(LoadExternal):
         self.load_lookup_tables(r)
 
         plk_trips = PLKTrips.from_db(r.db)
+        last_date = plk_trips.latest_date()
         total_trips = len(plk_trips)
         matched = 0
         curated = 0
@@ -158,6 +159,9 @@ class LoadICKPD(LoadExternal):
         )
         with r.db.transaction():
             for i, (kpd_date, kpd_number) in enumerate(kpd_trips):
+                if kpd_date > last_date:
+                    break  # KPD_Rozklad.csv is sorted on dep. date, so we can stop early
+
                 if i % 500 == 0:
                     self.logger.debug("Read %d KPD trips", i)
 
@@ -311,6 +315,9 @@ class PLKTrips:
             del self._by_id[trip.id]
             return trip
         return None
+
+    def latest_date(self) -> Date:
+        return max((i[1] for i in self._by_number_date), default=Date(1, 1, 1))
 
     @staticmethod
     def load_calendars(db: DBConnection) -> defaultdict[str, list[Date]]:
