@@ -1,27 +1,22 @@
 # SPDX-FileCopyrightText: 2026 Marcin Kasznia, Mikołaj Kuranowski
 # SPDX-License-Identifier: MIT
 
-import csv
 import difflib
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Container, Generator, Iterable, Iterator, Mapping
 from datetime import UTC, datetime
 from ftplib import FTP_TLS
 from itertools import groupby
 from operator import itemgetter
-from typing import NamedTuple, cast
+from typing import NamedTuple, Self, TypeAlias, cast
 
 from impuls import DBConnection, LocalResource, Task, TaskRuntime
 from impuls.errors import InputNotModified
-from impuls.model import CalendarException, Stop, StopTime, TimePoint, Trip
+from impuls.model import CalendarException, Date, Stop, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
-from impuls.tools.types import StrPath
 
-from ..util import describe
 from ..util.apikey import get_apikey
 from .task import LoadExternal
-
-CSVRow = dict[str, str]
 
 ROMAN_TO_ARABIC = {
     "I": "1",
@@ -48,7 +43,7 @@ IGNORED_STOPS = (
 
 
 class TrainKey(NamedTuple):
-    date: str
+    date: Date
     train_number: str
 
 
@@ -56,6 +51,15 @@ class KPDStop(NamedTuple):
     stop_id: str
     departure_platform: str
     departure_track: str
+
+    @classmethod
+    def from_csv_row(cls, row: Mapping[str, str]) -> Self:
+        stop_id = row["NumerStacji"]
+        departure_platform = row["PeronWyjazd"]
+        if row["StacjaHandlowa"] != "1":
+            departure_platform = "WAYPOINT"
+        departure_track = row["TorWyjazd"]
+        return cls(stop_id, departure_platform, departure_track)
 
 
 KPDLookup = defaultdict[str, dict[str, list[KPDStop]]]
@@ -134,32 +138,35 @@ class LoadICKPD(LoadExternal):
         self.calendar_lookup.clear()
 
     def execute(self, r: TaskRuntime) -> None:
-        self.clear()
-        self.load_lookup_tables(r)
-        kpd = self.load_kpd(r)
-
-        if not kpd:
+        kpd_resource = r.resources.get("ic_kpd_rozklad.csv")
+        if kpd_resource is None:
+            self.logger.warning("No IC KPD Rozklad resource available. Skipping execution.")
             return
 
-        trips = self.get_trips_to_process(r)
-        total_trips = len(trips)
+        self.clear()
+        self.load_lookup_tables(r)
+
+        plk_trips = PLKTrips.from_db(r.db)
+        total_trips = len(plk_trips)
         matched = 0
         curated = 0
         self.logger.info("Processing KPD and PLK schedules for %d trips", total_trips)
 
+        kpd_trips = KPDTrips(
+            csv_rows=kpd_resource.csv(encoding="windows-1250", delimiter=";"),
+            waypoints=self.important_waypoints,
+        )
         with r.db.transaction():
-            for i, plk_trip in enumerate(trips):
+            for i, (kpd_date, kpd_number) in enumerate(kpd_trips):
                 if i % 500 == 0:
-                    self.logger.info(
-                        "Processed %d / %d (%.2f %%) trips",
-                        i,
-                        total_trips,
-                        100 * i / total_trips,
-                    )
+                    self.logger.debug("Read %d KPD trips", i)
 
-                if kpd_times := self.find_kpd_match(kpd, plk_trip, r.db):
+                if plk_trip := plk_trips.pop_any(get_plk_train_numbers(kpd_number), kpd_date):
                     matched += 1
+
                     plk_times = self.get_plk_stop_times(plk_trip, r)
+                    kpd_times = list(kpd_trips.stop_times())
+
                     combined_times = self.enhance_items(plk_times, kpd_times, r)
                     if combined_times:
                         curated += 1
@@ -196,50 +203,6 @@ class LoadICKPD(LoadExternal):
         calendar_dates = r.db.retrieve_all(CalendarException).all()
         for entry in calendar_dates:
             self.calendar_lookup[entry.calendar_id].append(str(entry.date))
-
-    def load_kpd(self, r: TaskRuntime) -> KPDLookup | None:
-        if "ic_kpd_rozklad.csv" not in r.resources:
-            self.logger.warning("No IC KPD Rozklad resource available. Skipping execution.")
-            return
-
-        rows = train_rows(r.resources["ic_kpd_rozklad.csv"].stored_at, self.important_waypoints)
-
-        return build_kpd_lookup(rows)
-
-    def get_trips_to_process(self, r: TaskRuntime) -> list[Trip]:
-        return r.db.typed_out_execute(
-            "SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip
-        ).all()
-
-    def find_kpd_match(self, kpd: KPDLookup, trip: Trip, db: DBConnection) -> list[KPDStop] | None:
-        plk_number = trip.get_extra_field("plk_train_number")
-        if not plk_number:
-            raise ValueError(f"Trip {trip.id} has no plk_train_number")
-
-        for train_number in get_plk_train_numbers(plk_number):
-            kpd_train = kpd.get(train_number)
-            if kpd_train:
-                break
-        else:
-            self.logger.warning(
-                "%s not found in KPD Rozklad data - skipping",
-                describe.trip(db, trip.id),
-            )
-            return None
-
-        calendar_dates_for_trip = self.calendar_lookup.get(trip.calendar_id, [])
-        if not calendar_dates_for_trip:
-            self.logger.warning("%s has no calendar dates - skipping", describe.trip(db, trip.id))
-            return None
-
-        date = next((d for d in calendar_dates_for_trip if d in kpd_train), None)
-        if not date:
-            self.logger.warning(
-                "%s has no stops in KPD for any of its active dates - skipping",
-                describe.trip(db, trip.id),
-            )
-            return None
-        return kpd_train[date]
 
     def get_plk_stop_times(self, trip: Trip, r: TaskRuntime) -> list[StopTime]:
         stops_from_plk = r.db.typed_out_execute(
@@ -290,7 +253,9 @@ class LoadICKPD(LoadExternal):
     def apply_combined_times(self, trip: Trip, combined: list[StopTime], r: TaskRuntime) -> None:
         try:
             r.db.raw_execute("DELETE FROM stop_times WHERE trip_id = ?", (trip.id,))
-            r.db.create_many(StopTime, combined)
+            # r.db.create_many(StopTime, combined)
+            for st in combined:
+                r.db.create(st)
         except Exception:
             self.logger.exception(
                 "Error occurred while updating stop_times for trip %s %s",
@@ -299,6 +264,130 @@ class LoadICKPD(LoadExternal):
             )
             self.logger.debug("Stops for trip %s: %s", trip.id, combined)
             raise
+
+
+class PLKTrips:
+    """Set of PKP IC trips to curate, as provided by PKP PLK (stored in the DB)."""
+
+    def __init__(self) -> None:
+        self._by_id = dict[str, Trip]()
+        self._by_number_date = dict[tuple[str, Date], Trip]()
+
+    def __len__(self) -> int:
+        return len(self._by_id)
+
+    def load(self, db: DBConnection) -> None:
+        """Overwrites the current set of trips by re-loading them from the database."""
+
+        self._by_id.clear()
+        self._by_number_date.clear()
+
+        calendars = self.load_calendars(db)
+        for trip in self.load_trips(db):
+            self._by_id[trip.id] = trip
+
+            numbers_str = trip.get_extra_field("plk_train_number") or trip.short_name
+            for number in get_plk_train_numbers(numbers_str):
+                for date in calendars[trip.calendar_id]:
+                    self._by_number_date[number, date] = trip
+
+    def pop_any(self, numbers: Iterable[str], date: Date) -> Trip | None:
+        """
+        Finds the first trip with any of the given numbers operating on the given date;
+        removes it from the store and returns it.
+        """
+        for number in numbers:
+            if t := self.pop(number, date):
+                return t
+        return None
+
+    def pop(self, number: str, date: Date) -> Trip | None:
+        """
+        Finds a Trip with a given number, operating on the given date;
+        removes it from the store and returns it.
+        """
+        trip = self._by_number_date.get((number, date))
+        if trip and trip.id in self._by_id:
+            del self._by_id[trip.id]
+            return trip
+        return None
+
+    @staticmethod
+    def load_calendars(db: DBConnection) -> defaultdict[str, list[Date]]:
+        """Creates a lookup table from calendar_id to a list of operating dates
+        of that calendar. Assumes a calendar_exceptions-only dataset.
+        """
+        calendars = defaultdict[str, list[Date]](list)
+        with db.raw_execute(
+            "SELECT calendar_id, date FROM calendar_exceptions WHERE exception_type = 1",
+        ) as query:
+            for row in query:
+                calendar_id = cast(str, row[0])
+                date = Date.from_ymd_str(cast(str, row[1]))
+                calendars[calendar_id].append(date)
+        return calendars
+
+    @staticmethod
+    def load_trips(db: DBConnection) -> Generator[Trip]:
+        """Generates all trips to curate."""
+        with db.typed_out_execute("SELECT * FROM trips WHERE trip_id LIKE 'PLK_IC_%'", Trip) as q:
+            yield from q
+
+    @classmethod
+    def from_db(cls, db: DBConnection) -> Self:
+        """Creates a new PLKTrips set and loads data into it."""
+        self = cls()
+        self.load(db)
+        return self
+
+
+class KPDTrips(Iterator[TrainKey]):
+    """KPDTrips iterates over trips present in a KPD_Rozklad.csv file.
+
+    The iterator works lazily, it only generates TrainKeys.
+    To extract the KPDStops, one must call the `stop_times` method.
+    """
+
+    GroupKey: TypeAlias = tuple[str, str]  # DataOdjazdu, NrPociagu
+    GroupValue: TypeAlias = Iterable[Mapping[str, str]]
+    GroupItem: TypeAlias = tuple[GroupKey, GroupValue]
+
+    _it: Iterator[GroupItem]
+    _curr: GroupItem
+
+    def __init__(
+        self,
+        csv_rows: Iterable[Mapping[str, str]],
+        waypoints: Container[str],
+    ) -> None:
+        # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
+        #       For the past 5 years that was the case.
+        # FIXME: Instead of manually excluding stops, we should ignore StacjaHandlowa rows
+        #        which are not matched with a corresponding PLK StopTime.
+        self._it = groupby(
+            filter(
+                lambda row: (
+                    (row["StacjaHandlowa"] == "1" or row["NumerStacji"] in waypoints)
+                    and row["NumerStacji"] not in IGNORED_STOPS
+                ),
+                csv_rows,
+            ),
+            key=itemgetter("DataOdjazdu", "NrPociagu"),
+        )
+        self._curr = (("", ""), ())
+
+    def __next__(self) -> TrainKey:
+        self._curr = next(self._it)
+        date_str, number = self._curr[0]
+        return TrainKey(Date.from_ymd_str(date_str), number)
+
+    def stop_times(self) -> Generator[KPDStop]:
+        """Returns a generator of KPDStops of the last-generated trip.
+
+        This method is only available once per trip, as the returned iterator
+        is shared with the top-level CSV row iterator.
+        """
+        yield from map(KPDStop.from_csv_row, self._curr[1])
 
 
 def normalize_platform(x: str) -> str:
@@ -349,26 +438,6 @@ def kpd_to_stop_time(trip_id: str, kpd: KPDStop) -> StopTime:
     )
 
 
-def build_kpd_lookup(rows: Iterable[tuple[TrainKey, Iterable[CSVRow]]]) -> KPDLookup:
-    """
-    Parses train rows from KPD CSV and builds a lookup mapping
-    clean train numbers to date, and date to a list of KPDStop.
-    """
-    parsed = KPDLookup(dict)
-    for key, lines in rows:
-        clean_number = str(int(key.train_number.split("/")[0]) // 2 * 2)
-        stops = list[KPDStop]()
-        for line in lines:
-            stop_id = line["NumerStacji"]
-            departure_platform = line["PeronWyjazd"]
-            if line["StacjaHandlowa"] != "1":
-                departure_platform = "WAYPOINT"
-            departure_track = line["TorWyjazd"]
-            stops.append(KPDStop(stop_id, departure_platform, departure_track))
-        parsed[clean_number][key.date] = stops
-    return parsed
-
-
 def ensure_start_and_end_not_at_waypoint(stops_times: list[StopTime]) -> list[StopTime]:
     def is_waypoint(index: int) -> bool:
         stop_time = stops_times[index]
@@ -387,24 +456,6 @@ def ensure_start_and_end_not_at_waypoint(stops_times: list[StopTime]) -> list[St
         end -= 1
 
     return stops_times[start : end + 1]
-
-
-def train_rows(
-    filename: StrPath, important_waypoints: set[str]
-) -> Iterator[tuple[TrainKey, Iterator[CSVRow]]]:
-    # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
-    #       For the past 5 years that was the case.
-    with open(filename, "r", encoding="windows-1250", newline="") as f:
-        all_rows = csv.DictReader(f, delimiter=";")
-        pax_rows = filter(
-            lambda r: (
-                (r["StacjaHandlowa"] == "1" or r["NumerStacji"] in important_waypoints)
-                and r["NumerStacji"] not in IGNORED_STOPS
-            ),
-            all_rows,
-        )
-        for key, group in groupby(pax_rows, itemgetter("DataOdjazdu", "NrPociagu")):
-            yield TrainKey(*key), group
 
 
 class FTP_TLS_Patched(FTP_TLS):
