@@ -14,6 +14,7 @@ from .assign_direction_id import AssignDirectionID
 from .curate_routes import CurateRoutes
 from .deduplicate_consecutive_times import DeduplicateConsecutiveTimes
 from .extract_routes import ExtractRoutes
+from .fix_berlin_bus_replacement import FixBerlinBusReplacement
 from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
@@ -153,11 +154,11 @@ class PolishTrainsGTFS(App):
                     headers={"X-Api-Key": apikey},
                     params={"dateFrom": start_date.isoformat(), "dateTo": end_date.isoformat()},
                 ),
-                "geo.osm": LocalResource("data/geo.osm"),
+                "geo.osm": HTTPResource.get("https://raw.githubusercontent.com/MKuranowski/PolishTrainsGTFS/refs/heads/main/data/geo.osm"),
                 "bus_routes.yaml": LocalResource("data/bus_routes.yaml"),
-                "directions.yaml": LocalResource("data/directions.yaml"),
+                "directions.yaml": HTTPResource.get("https://raw.githubusercontent.com/MKuranowski/PolishTrainsGTFS/refs/heads/main/data/directions.yaml"),
                 "routes.yaml": LocalResource("data/routes.yaml"),
-                "route_extract.yaml": LocalResource("data/route_extract.yaml"),
+                "route_extract.yaml": HTTPResource.get("https://raw.githubusercontent.com/MKuranowski/PolishTrainsGTFS/refs/heads/main/data/route_extract.yaml"),
                 "shapes.yaml": LocalResource("data/shapes.yaml"),
             },
             tasks=[
@@ -228,6 +229,7 @@ class PolishTrainsGTFS(App):
                 AddTrainNames(),
                 GenerateTripHeadsign(),
                 AssignDirectionID(),
+                FixBerlinBusReplacement(),
                 SplitBusLegs(),
                 LoadBusStops(),
                 RemoveUnusedEntities(preserve_fallback_stops=True),
