@@ -11,7 +11,7 @@ from itertools import groupby
 from operator import itemgetter
 from typing import NamedTuple, Self, TypeAlias, cast
 
-from impuls import DBConnection, LocalResource, Task, TaskRuntime
+from impuls import DBConnection, LocalResource, TaskRuntime
 from impuls.errors import DataError, InputNotModified, MultipleDataErrors
 from impuls.model import Date, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
@@ -134,47 +134,6 @@ class KPDStopTime:
             arrival_platform,
             arrival_track,
         )
-
-
-class CleanWaypoints(Task):
-    def execute(self, r: TaskRuntime) -> None:
-        with r.db.transaction():
-            r.db.raw_execute(
-                """
-                DELETE FROM stop_times
-                WHERE pickup_type = 1 and drop_off_type = 1
-                """
-            )
-
-            # renumber stop_sequence
-            r.db.raw_execute(
-                """
-                UPDATE stop_times
-                SET stop_sequence = stop_sequence + 10000
-                WHERE trip_id like "%IC%";
-                """
-            )
-            r.db.raw_execute(
-                """
-                WITH reordered AS (
-                    SELECT
-                        rowid AS rid,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY trip_id
-                            ORDER BY stop_sequence
-                        ) AS new_stop_sequence
-                    FROM stop_times
-                    WHERE trip_id like "%IC%"
-                )
-                UPDATE stop_times
-                SET stop_sequence = (
-                    SELECT new_stop_sequence
-                    FROM reordered
-                    WHERE reordered.rid = stop_times.rowid
-                )
-                WHERE trip_id like "%IC%";
-                """
-            )
 
 
 class LoadICKPD(LoadExternal):
