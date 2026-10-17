@@ -3,7 +3,7 @@
 
 import difflib
 from collections import defaultdict
-from collections.abc import Container, Generator, Iterable, Iterator, Mapping
+from collections.abc import Container, Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import UTC, datetime
 from ftplib import FTP_TLS
 from itertools import groupby
@@ -11,8 +11,8 @@ from operator import itemgetter
 from typing import NamedTuple, Self, TypeAlias, cast
 
 from impuls import DBConnection, LocalResource, Task, TaskRuntime
-from impuls.errors import InputNotModified
-from impuls.model import CalendarException, Date, Stop, StopTime, TimePoint, Trip
+from impuls.errors import DataError, InputNotModified, MultipleDataErrors
+from impuls.model import Date, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 
 from ..util.apikey import get_apikey
@@ -62,10 +62,6 @@ class KPDStop(NamedTuple):
         return cls(stop_id, departure_platform, departure_track)
 
 
-KPDLookup = defaultdict[str, dict[str, list[KPDStop]]]
-CalendarLookup = defaultdict[str, list[str]]
-
-
 class CleanWaypoints(Task):
     def execute(self, r: TaskRuntime) -> None:
         with r.db.transaction():
@@ -110,8 +106,9 @@ class CleanWaypoints(Task):
 class LoadICKPD(LoadExternal):
     def __init__(self) -> None:
         super().__init__()
-        self.important_waypoints = set[str]()
-        self.calendar_lookup = CalendarLookup(list)
+        self.waypoints = set[str]()
+        self.known_stops = set[str]()
+        self.unmatched_pax_stops = set[str]()
 
     @staticmethod
     def get_required_resources() -> dict[str, Resource]:
@@ -134,8 +131,9 @@ class LoadICKPD(LoadExternal):
             return {}
 
     def clear(self) -> None:
-        self.important_waypoints.clear()
-        self.calendar_lookup.clear()
+        self.waypoints.clear()
+        self.known_stops.clear()
+        self.unmatched_pax_stops.clear()
 
     def execute(self, r: TaskRuntime) -> None:
         kpd_resource = r.resources.get("ic_kpd_rozklad.csv")
@@ -155,7 +153,7 @@ class LoadICKPD(LoadExternal):
 
         kpd_trips = KPDTrips(
             csv_rows=kpd_resource.csv(encoding="windows-1250", delimiter=";"),
-            waypoints=self.important_waypoints,
+            waypoints=self.waypoints,
         )
         with r.db.transaction():
             for i, (kpd_date, kpd_number) in enumerate(kpd_trips):
@@ -171,10 +169,10 @@ class LoadICKPD(LoadExternal):
                     plk_times = self.get_plk_stop_times(plk_trip, r)
                     kpd_times = list(kpd_trips.stop_times())
 
-                    combined_times = self.enhance_items(plk_times, kpd_times, r)
+                    combined_times = self.combine_stop_times(plk_times, kpd_times)
                     if combined_times:
                         curated += 1
-                        self.apply_combined_times(plk_trip, combined_times, r)
+                        self.replace_stop_times(r.db, combined_times)
 
         self.logger.info(
             "Processed all %d trips, matched %d (%.2f %%), curated %d (%.2f %%)",
@@ -184,29 +182,11 @@ class LoadICKPD(LoadExternal):
             curated,
             100 * curated / total_trips,
         )
+        self.check_unmatched_stops()
 
     def load_lookup_tables(self, r: TaskRuntime) -> None:
-        self.important_waypoints = {
-            cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]
-        }
-
-        with r.db.transaction():
-            all_stops = {stop.id for stop in r.db.retrieve_all(Stop).all()}
-            for stop_id in self.important_waypoints:
-                if stop_id not in all_stops:
-                    r.db.create(
-                        Stop(
-                            id=stop_id,
-                            name=f"Waypoint {stop_id}",
-                            lat=0.0,
-                            lon=0.0,
-                        )
-                    )
-                    all_stops.add(stop_id)
-
-        calendar_dates = r.db.retrieve_all(CalendarException).all()
-        for entry in calendar_dates:
-            self.calendar_lookup[entry.calendar_id].append(str(entry.date))
+        self.waypoints = {cast(str, i) for i in r.resources["waypoints.yaml"].yaml()["waypoints"]}
+        self.known_stops = {cast(str, i[0]) for i in r.db.raw_execute("SELECT stop_id FROM stops")}
 
     def get_plk_stop_times(self, trip: Trip, r: TaskRuntime) -> list[StopTime]:
         stops_from_plk = r.db.typed_out_execute(
@@ -216,37 +196,37 @@ class LoadICKPD(LoadExternal):
         ).all()
         return stops_from_plk
 
-    def enhance_items(
-        self, plk_stop_times: list[StopTime], kpd_stops: list[KPDStop], r: TaskRuntime
+    def combine_stop_times(
+        self,
+        plk_stop_times: Sequence[StopTime],
+        kpd_stops: Sequence[KPDStop],
     ) -> list[StopTime] | None:
         """
         Enhances PLK stop times with KPD stop data and inserts KPD stops when missing from PLK.
         """
-        keys_plk = [v.stop_id for v in plk_stop_times]
-        keys_kpd = [v.stop_id for v in kpd_stops]
 
         combined = list[StopTime]()
-        updated_stops = set[str]()
+        changed = False
         trip_id = plk_stop_times[0].trip_id
 
-        matcher = difflib.SequenceMatcher(None, keys_plk, keys_kpd)
+        plk_stop_ids = [v.stop_id for v in plk_stop_times]
+        kpd_stop_ids = [v.stop_id for v in kpd_stops]
+        matcher = difflib.SequenceMatcher(None, plk_stop_ids, kpd_stop_ids)
 
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
-                for plk, kpd in zip(plk_stop_times[i1:i2], kpd_stops[j1:j2]):
-                    if merge_stop_time_with_kpd(plk, kpd):
-                        updated_stops.add(plk.stop_id)
-                    combined.append(plk)
+                for plk_st, kpd_st in zip(plk_stop_times[i1:i2], kpd_stops[j1:j2]):
+                    if merge_stop_time_with_kpd(plk_st, kpd_st):
+                        changed = True
+                    combined.append(plk_st)
             else:
-                if tag in ("replace", "delete"):
-                    for plk in plk_stop_times[i1:i2]:
-                        combined.append(plk)
-                if tag in ("replace", "insert"):
-                    for kpd in kpd_stops[j1:j2]:
-                        combined.append(kpd_to_stop_time(trip_id, kpd))
-                        updated_stops.add(kpd.stop_id)
+                assert tag in ("replace", "delete", "insert")
+                changed = changed or j1 != j2  # j1 != j2 => non-empty kpd_stops slice
 
-        if not updated_stops:
+                combined.extend(plk_stop_times[i1:i2])
+                combined.extend(self.convert_waypoints_only(kpd_stops[j1:j2], trip_id))
+
+        if not changed:
             return None
 
         for i in range(len(combined)):
@@ -254,20 +234,41 @@ class LoadICKPD(LoadExternal):
 
         return ensure_start_and_end_not_at_waypoint(combined)
 
-    def apply_combined_times(self, trip: Trip, combined: list[StopTime], r: TaskRuntime) -> None:
-        try:
-            r.db.raw_execute("DELETE FROM stop_times WHERE trip_id = ?", (trip.id,))
-            # r.db.create_many(StopTime, combined)
-            for st in combined:
-                r.db.create(st)
-        except Exception:
-            self.logger.exception(
-                "Error occurred while updating stop_times for trip %s %s",
-                trip.id,
-                trip.get_extra_field("plk_train_number"),
+    def convert_waypoints_only(
+        self,
+        kpd_stops: Iterable[KPDStop],
+        trip_id: str,
+    ) -> Generator[StopTime]:
+        for kpd_stop in kpd_stops:
+            if kpd_stop.departure_platform == "WAYPOINT":
+                yield kpd_to_stop_time(trip_id, kpd_stop)
+            else:
+                self.unmatched_pax_stops.add(kpd_stop.stop_id)
+
+    def replace_stop_times(self, db: DBConnection, stop_times: Sequence[StopTime]) -> None:
+        trip_id = stop_times[0].trip_id
+        self.create_missing_stops(db, stop_times)
+        db.raw_execute("DELETE FROM stop_times WHERE trip_id = ?", (trip_id,))
+        db.create_many(StopTime, stop_times)
+
+    def create_missing_stops(self, db: DBConnection, combined: Iterable[StopTime]) -> None:
+        for st in combined:
+            if st.stop_id not in self.known_stops:
+                db.raw_execute(
+                    "INSERT INTO stops (stop_id, name, lat, lon) VALUES (?, 'Waypoint', 0, 0)",
+                    (st.stop_id,),
+                )
+                self.known_stops.add(st.stop_id)
+
+    def check_unmatched_stops(self) -> None:
+        if self.unmatched_pax_stops:
+            raise MultipleDataErrors(
+                "loading KPD schedules",
+                [
+                    DataError(f"unmatched passenger stop: {id}")
+                    for id in sorted(self.unmatched_pax_stops)
+                ],
             )
-            self.logger.debug("Stops for trip %s: %s", trip.id, combined)
-            raise
 
 
 class PLKTrips:
