@@ -4,6 +4,7 @@
 import difflib
 from collections import defaultdict
 from collections.abc import Container, Generator, Iterable, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from ftplib import FTP_TLS
 from itertools import groupby
@@ -15,6 +16,7 @@ from impuls.errors import DataError, InputNotModified, MultipleDataErrors
 from impuls.model import Date, StopTime, TimePoint, Trip
 from impuls.resource import ConcreteResource, Resource, ZippedResource
 
+from ..util import json
 from ..util.apikey import get_apikey
 from .task import LoadExternal
 
@@ -53,19 +55,77 @@ class TrainKey(NamedTuple):
             yield TrainKey(self.date, number)
 
 
-class KPDStop(NamedTuple):
+@dataclass(slots=True)
+class KPDStopTime:
     stop_id: str
+    stop_name: str
     departure_platform: str
     departure_track: str
+    arrival_platform: str
+    arrival_track: str
+
+    def enhance(self, plk: StopTime) -> bool:
+        """Enhances the details of an existing PLK StopTime. Returns True if `plk` was modified."""
+        if plk.platform or not self.departure_platform:
+            return False
+
+        plk.platform = self.departure_platform
+
+        extra_fields = plk.get_extra_fields()
+        extra_fields["track"] = self.departure_track
+        extra_fields["arrival_platform"] = self.arrival_platform
+        extra_fields["arrival_track"] = self.arrival_track
+        plk.set_extra_fields(extra_fields)
+
+        return True
+
+    def convert(self, trip_id: str) -> StopTime:
+        """Creates an "empty" StopTime based on this KPDStop. Such StopTime mustn't be exported
+        in GTFS and must be removed via CleanWaypoints.
+        """
+        return StopTime(
+            stop_id=self.stop_id,
+            trip_id=trip_id,
+            stop_sequence=0,
+            arrival_time=TimePoint(),
+            departure_time=TimePoint(),
+            pickup_type=StopTime.PassengerExchange.NONE,
+            drop_off_type=StopTime.PassengerExchange.NONE,
+            platform=self.departure_platform,
+            extra_fields_json=json.dumps(
+                {
+                    "track": self.departure_track,
+                    "arrival_platform": self.arrival_platform,
+                    "arrival_track": self.arrival_track,
+                    "stop_name": self.stop_name,
+                }
+            ),
+        )
 
     @classmethod
     def from_csv_row(cls, row: Mapping[str, str]) -> Self:
         stop_id = row["NumerStacji"]
-        departure_platform = row["PeronWyjazd"]
+        stop_name = normalize_null(row["NazwaStacji"])
+
         if row["StacjaHandlowa"] != "1":
             departure_platform = "WAYPOINT"
-        departure_track = row["TorWyjazd"]
-        return cls(stop_id, departure_platform, departure_track)
+            departure_track = ""
+            arrival_platform = "WAYPOINT"
+            arrival_track = ""
+        else:
+            departure_platform = normalize_platform(row["PeronWyjazd"])
+            departure_track = normalize_null(row["TorWyjazd"])
+            arrival_platform = normalize_platform(row["PeronWjazd"])
+            arrival_track = normalize_null(row["TorWjazd"])
+
+        return cls(
+            stop_id,
+            stop_name,
+            departure_platform,
+            departure_track,
+            arrival_platform,
+            arrival_track,
+        )
 
 
 class CleanWaypoints(Task):
@@ -114,7 +174,7 @@ class LoadICKPD(LoadExternal):
         super().__init__()
         self.waypoints = set[str]()
         self.known_stops = set[str]()
-        self.unmatched_pax_stops = set[str]()
+        self.unmatched_pax_stops = dict[str, str]()
 
     @staticmethod
     def get_required_resources() -> dict[str, Resource]:
@@ -195,42 +255,40 @@ class LoadICKPD(LoadExternal):
         self.known_stops = {cast(str, i[0]) for i in r.db.raw_execute("SELECT stop_id FROM stops")}
 
     def get_plk_stop_times(self, trip: Trip, r: TaskRuntime) -> list[StopTime]:
-        stops_from_plk = r.db.typed_out_execute(
+        with r.db.typed_out_execute(
             "SELECT * FROM stop_times WHERE trip_id = ? ORDER BY stop_sequence",
             StopTime,
             (trip.id,),
-        ).all()
-        return stops_from_plk
+        ) as query:
+            return query.all()
 
     def combine_stop_times(
         self,
-        plk_stop_times: Sequence[StopTime],
-        kpd_stops: Sequence[KPDStop],
+        plk: Sequence[StopTime],
+        kpd: Sequence[KPDStopTime],
     ) -> list[StopTime] | None:
-        """
-        Enhances PLK stop times with KPD stop data and inserts KPD stops when missing from PLK.
-        """
+        """Enhances PLK stop times with KPD stop times; inserting missing waypoints."""
 
         combined = list[StopTime]()
         changed = False
-        trip_id = plk_stop_times[0].trip_id
+        trip_id = plk[0].trip_id
 
-        plk_stop_ids = [v.stop_id for v in plk_stop_times]
-        kpd_stop_ids = [v.stop_id for v in kpd_stops]
+        plk_stop_ids = [v.stop_id for v in plk]
+        kpd_stop_ids = [v.stop_id for v in kpd]
         matcher = difflib.SequenceMatcher(None, plk_stop_ids, kpd_stop_ids)
 
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == "equal":
-                for plk_st, kpd_st in zip(plk_stop_times[i1:i2], kpd_stops[j1:j2]):
-                    if merge_stop_time_with_kpd(plk_st, kpd_st):
+                for plk_st, kpd_st in zip(plk[i1:i2], kpd[j1:j2]):
+                    if kpd_st.enhance(plk_st):
                         changed = True
                     combined.append(plk_st)
             else:
                 assert tag in ("replace", "delete", "insert")
                 changed = changed or j1 != j2  # j1 != j2 => non-empty kpd_stops slice
 
-                combined.extend(plk_stop_times[i1:i2])
-                combined.extend(self.convert_waypoints_only(kpd_stops[j1:j2], trip_id))
+                combined.extend(plk[i1:i2])
+                combined.extend(self.convert_waypoints_only(kpd[j1:j2], trip_id))
 
         if not changed:
             return None
@@ -242,14 +300,14 @@ class LoadICKPD(LoadExternal):
 
     def convert_waypoints_only(
         self,
-        kpd_stops: Iterable[KPDStop],
+        kpd: Iterable[KPDStopTime],
         trip_id: str,
     ) -> Generator[StopTime]:
-        for kpd_stop in kpd_stops:
-            if kpd_stop.departure_platform == "WAYPOINT":
-                yield kpd_to_stop_time(trip_id, kpd_stop)
+        for st in kpd:
+            if st.departure_platform == "WAYPOINT":
+                yield st.convert(trip_id)
             else:
-                self.unmatched_pax_stops.add(kpd_stop.stop_id)
+                self.unmatched_pax_stops[st.stop_id] = st.stop_name
 
     def replace_stop_times(self, db: DBConnection, stop_times: Sequence[StopTime]) -> None:
         trip_id = stop_times[0].trip_id
@@ -260,9 +318,12 @@ class LoadICKPD(LoadExternal):
     def create_missing_stops(self, db: DBConnection, combined: Iterable[StopTime]) -> None:
         for st in combined:
             if st.stop_id not in self.known_stops:
+                name = st.get_extra_field("stop_name") or ""
+                name = f"{name} (waypoint)" if name and st.platform == "WAYPOINT" else name
+
                 db.raw_execute(
-                    "INSERT INTO stops (stop_id, name, lat, lon) VALUES (?, 'Waypoint', 0, 0)",
-                    (st.stop_id,),
+                    "INSERT INTO stops (stop_id, name, lat, lon) VALUES (?, ?, 0, 0)",
+                    (st.stop_id, name),
                 )
                 self.known_stops.add(st.stop_id)
 
@@ -271,8 +332,8 @@ class LoadICKPD(LoadExternal):
             raise MultipleDataErrors(
                 "loading KPD schedules",
                 [
-                    DataError(f"unmatched passenger stop: {id}")
-                    for id in sorted(self.unmatched_pax_stops)
+                    DataError(f"unmatched passenger stop: {id} ({name})")
+                    for id, name in sorted(self.unmatched_pax_stops.items())
                 ],
             )
 
@@ -395,16 +456,19 @@ class KPDTrips(Iterator[TrainKey]):
         date_str, number = self._curr[0]
         return TrainKey(Date.from_ymd_str(date_str), number)
 
-    def stop_times(self) -> Generator[KPDStop]:
+    def stop_times(self) -> Generator[KPDStopTime]:
         """Returns a generator of KPDStops of the last-generated trip.
 
         This method is only available once per trip, as the returned iterator
         is shared with the top-level CSV row iterator.
         """
-        yield from map(KPDStop.from_csv_row, self._curr[1])
+        yield from map(KPDStopTime.from_csv_row, self._curr[1])
 
 
 def normalize_platform(x: str) -> str:
+    if x == "NULL":
+        return ""
+
     if x[-1:] == "a":
         base = x[:-1]
         suffix = "a"
@@ -414,6 +478,10 @@ def normalize_platform(x: str) -> str:
 
     base = ROMAN_TO_ARABIC.get(base, base)
     return f"{base}{suffix}"
+
+
+def normalize_null(x: str) -> str:
+    return "" if x == "NULL" else x
 
 
 def get_plk_train_numbers(plk_number: str) -> tuple[str, str]:
@@ -427,29 +495,6 @@ def get_plk_train_numbers(plk_number: str) -> tuple[str, str]:
         # flip last bit: odd -> lower even; even -> higher odd
         extra_number = str(int(main_number) ^ 1)
     return main_number, extra_number
-
-
-def merge_stop_time_with_kpd(plk: StopTime, kpd: KPDStop) -> bool:
-    if not plk.platform:
-        plk.platform = normalize_platform(kpd.departure_platform)
-        plk.set_extra_field("track", kpd.departure_track)
-        return True
-    return False
-
-
-def kpd_to_stop_time(trip_id: str, kpd: KPDStop) -> StopTime:
-    """
-    Creates an "empty" StopTime based on KPDStop. Such StopTime mustn't be exported in GTFS and must be removed via CleanWaypoints
-    """
-    return StopTime(
-        stop_id=kpd.stop_id,
-        trip_id=trip_id,
-        stop_sequence=0,
-        arrival_time=TimePoint(),
-        departure_time=TimePoint(),
-        pickup_type=StopTime.PassengerExchange.NONE,
-        drop_off_type=StopTime.PassengerExchange.NONE,
-    )
 
 
 def ensure_start_and_end_not_at_waypoint(stops_times: list[StopTime]) -> list[StopTime]:
