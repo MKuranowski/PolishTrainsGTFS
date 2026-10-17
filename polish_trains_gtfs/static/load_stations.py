@@ -29,7 +29,7 @@ class StationToUpdate(NamedTuple):
     trips: defaultdict[PlatformTrack, list[TripStop]]
 
 
-FAKE_PLATFORMS = {"", "BUS"}
+FAKE_PLATFORMS = {"", "BUS", "WAYPOINT"}
 
 PLATFORM_MATCH_OVERRIDE: Mapping[tuple[str, str, str], tuple[str, str]] = {
     ("33571", "1", ""): ("1/2", ""),  # W-wa Śródmieście - match platform "1" with "1/2"
@@ -57,11 +57,15 @@ class LoadStations(Task):
         if not any(id in self.to_update for id in station.all_ids()):
             return
 
-        self.upsert_station(db, station)
-        self.create_fallback_platform(db, station)
-        self.create_platforms(db, station)
-        self.create_exits(db, station)
-        self.remove_secondary_stops(db, station)
+        if station.waypoint:
+            self.upsert_waypoint(db, station)
+        else:
+            self.upsert_station(db, station)
+            self.create_fallback_platform(db, station)
+            self.create_platforms(db, station)
+            self.create_exits(db, station)
+            self.remove_secondary_stops(db, station)
+
         self.mark_as_updated(station)
 
     def upsert_station(self, db: DBConnection, station: Station) -> None:
@@ -84,6 +88,27 @@ class LoadStations(Task):
             db.update(stop)  # departures are moved to a stop later on
         else:
             db.create(stop)
+
+    def upsert_waypoint(self, db: DBConnection, waypoint: Station) -> None:
+        stop = Stop(
+            id=waypoint.id,
+            name=waypoint.name,
+            lat=waypoint.lat,
+            lon=waypoint.lon,
+            wheelchair_boarding=waypoint.accessible,
+            location_type=Stop.LocationType.STOP,
+            extra_fields_json=json.dumps(
+                {
+                    "country": waypoint.country,
+                    "waypoint": "1",
+                }
+            ),
+        )
+
+        if waypoint.id in self.to_update:
+            db.update(stop)
+        else:
+            raise NotImplementedError("TODO: waypoints changing ids is not supported")
 
     def create_fallback_platform(self, db: DBConnection, station: Station) -> None:
         db.create(
