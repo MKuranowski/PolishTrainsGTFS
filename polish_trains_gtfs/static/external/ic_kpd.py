@@ -43,8 +43,14 @@ IGNORED_STOPS = (
 
 
 class TrainKey(NamedTuple):
+    """Unique identifier of a train - its number and departure date."""
+
     date: Date
-    train_number: str
+    number: str
+
+    def expanded(self) -> Generator["TrainKey"]:
+        for number in get_plk_train_numbers(self.number):
+            yield TrainKey(self.date, number)
 
 
 class KPDStop(NamedTuple):
@@ -156,14 +162,14 @@ class LoadICKPD(LoadExternal):
             waypoints=self.waypoints,
         )
         with r.db.transaction():
-            for i, (kpd_date, kpd_number) in enumerate(kpd_trips):
-                if kpd_date > last_date:
+            for i, kpd_trip in enumerate(kpd_trips):
+                if kpd_trip.date > last_date:
                     break  # KPD_Rozklad.csv is sorted on dep. date, so we can stop early
 
                 if i % 500 == 0:
                     self.logger.debug("Read %d KPD trips", i)
 
-                if plk_trip := plk_trips.pop_any(get_plk_train_numbers(kpd_number), kpd_date):
+                if plk_trip := plk_trips.pop(kpd_trip):
                     matched += 1
 
                     plk_times = self.get_plk_stop_times(plk_trip, r)
@@ -276,7 +282,7 @@ class PLKTrips:
 
     def __init__(self) -> None:
         self._by_id = dict[str, Trip]()
-        self._by_number_date = dict[tuple[str, Date], Trip]()
+        self._by_number_date = dict[TrainKey, Trip]()
 
     def __len__(self) -> int:
         return len(self._by_id)
@@ -294,31 +300,31 @@ class PLKTrips:
             numbers_str = trip.get_extra_field("plk_train_number") or trip.short_name
             for number in get_plk_train_numbers(numbers_str):
                 for date in calendars[trip.calendar_id]:
-                    self._by_number_date[number, date] = trip
+                    self._by_number_date[TrainKey(date, number)] = trip
 
-    def pop_any(self, numbers: Iterable[str], date: Date) -> Trip | None:
+    def pop(self, key: TrainKey) -> Trip | None:
         """
         Finds the first trip with any of the given numbers operating on the given date;
         removes it from the store and returns it.
         """
-        for number in numbers:
-            if t := self.pop(number, date):
+        for sub_key in key.expanded():
+            if t := self.pop_exact(sub_key):
                 return t
         return None
 
-    def pop(self, number: str, date: Date) -> Trip | None:
+    def pop_exact(self, key: TrainKey) -> Trip | None:
         """
         Finds a Trip with a given number, operating on the given date;
         removes it from the store and returns it.
         """
-        trip = self._by_number_date.get((number, date))
+        trip = self._by_number_date.get(key)
         if trip and trip.id in self._by_id:
             del self._by_id[trip.id]
             return trip
         return None
 
     def latest_date(self) -> Date:
-        return max((i[1] for i in self._by_number_date), default=Date(1, 1, 1))
+        return max((i.date for i in self._by_number_date), default=Date(1, 1, 1))
 
     @staticmethod
     def load_calendars(db: DBConnection) -> defaultdict[str, list[Date]]:
