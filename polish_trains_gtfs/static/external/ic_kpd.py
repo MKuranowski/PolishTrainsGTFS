@@ -35,13 +35,17 @@ ROMAN_TO_ARABIC = {
     "XII": "12",
 }
 
-# List of stops from KPD that are problematic (either don't appear in PLK API or appear under different ids)
-IGNORED_STOPS = (
-    "179301",  # Мостиська IІ /Mostistka/' - not in PLK API
-    "179215",  # Horka - technical station - not in PLK API
-    "179193",  # Jagodin - not in PLK API
-    "178501",  # Kępno - elevated part of the station, in PLK API as 45401 (same as lower part of the station)
-)
+# How to deal with invalid stop_id references for pax stops from KPD.
+# If a stop_id maps to None, that row should be ignored; otherwise its ID should be substituted.
+KPD_STOP_MAP: Mapping[str, str | None] = {
+    "179212": None,  # Frankfurt (Oder)
+    "179221": None,  # Petrovice u Karvine
+    "179301": None,  # Mostiska 2
+    "179215": None,  # Horka
+    "179193": None,  # Jagodin
+    "178501": "45401",  # Kępno
+    "201084": None,  # Bohumin Vrbice
+}
 
 
 class TrainKey(NamedTuple):
@@ -103,8 +107,12 @@ class KPDStopTime:
         )
 
     @classmethod
-    def from_csv_row(cls, row: Mapping[str, str]) -> Self:
+    def from_csv_row(cls, row: Mapping[str, str]) -> Self | None:
         stop_id = row["NumerStacji"]
+        stop_id = KPD_STOP_MAP.get(stop_id, stop_id)
+        if stop_id is None:
+            return None
+
         stop_name = normalize_null(row["NazwaStacji"])
 
         if row["StacjaHandlowa"] != "1":
@@ -437,14 +445,9 @@ class KPDTrips(Iterator[TrainKey]):
     ) -> None:
         # NOTE: This assumes that the input file is sorted on (DataOdjazdu, NrPociagu, Lp).
         #       For the past 5 years that was the case.
-        # FIXME: Instead of manually excluding stops, we should ignore StacjaHandlowa rows
-        #        which are not matched with a corresponding PLK StopTime.
         self._it = groupby(
             filter(
-                lambda row: (
-                    (row["StacjaHandlowa"] == "1" or row["NumerStacji"] in waypoints)
-                    and row["NumerStacji"] not in IGNORED_STOPS
-                ),
+                lambda row: row["StacjaHandlowa"] == "1" or row["NumerStacji"] in waypoints,
                 csv_rows,
             ),
             key=itemgetter("DataOdjazdu", "NrPociagu"),
@@ -462,7 +465,7 @@ class KPDTrips(Iterator[TrainKey]):
         This method is only available once per trip, as the returned iterator
         is shared with the top-level CSV row iterator.
         """
-        yield from map(KPDStopTime.from_csv_row, self._curr[1])
+        yield from filter(None, map(KPDStopTime.from_csv_row, self._curr[1]))
 
 
 def normalize_platform(x: str) -> str:
