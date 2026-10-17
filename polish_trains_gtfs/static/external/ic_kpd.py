@@ -7,8 +7,8 @@ from collections.abc import Container, Generator, Iterable, Iterator, Mapping, S
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from ftplib import FTP_TLS
-from itertools import groupby
-from operator import itemgetter
+from itertools import chain, groupby
+from operator import attrgetter, itemgetter
 from typing import NamedTuple, Self, TypeAlias, cast
 
 from impuls import DBConnection, LocalResource, TaskRuntime
@@ -63,6 +63,8 @@ class TrainKey(NamedTuple):
 class KPDStopTime:
     stop_id: str
     stop_name: str
+    arrival: TimePoint
+    departure: TimePoint
     departure_platform: str
     departure_track: str
     arrival_platform: str
@@ -84,15 +86,15 @@ class KPDStopTime:
         return True
 
     def convert(self, trip_id: str) -> StopTime:
-        """Creates an "empty" StopTime based on this KPDStop. Such StopTime mustn't be exported
+        """Creates an "empty" StopTime based on this KPDStopTime. Such StopTime mustn't be exported
         in GTFS and must be removed via CleanWaypoints.
         """
         return StopTime(
             stop_id=self.stop_id,
             trip_id=trip_id,
             stop_sequence=0,
-            arrival_time=TimePoint(),
-            departure_time=TimePoint(),
+            arrival_time=self.arrival,
+            departure_time=self.departure,
             pickup_type=StopTime.PassengerExchange.NONE,
             drop_off_type=StopTime.PassengerExchange.NONE,
             platform=self.departure_platform,
@@ -107,13 +109,20 @@ class KPDStopTime:
         )
 
     @classmethod
-    def from_csv_row(cls, row: Mapping[str, str]) -> Self | None:
+    def from_csv_row(cls, row: Mapping[str, str], prev_departure: TimePoint) -> Self | None:
         stop_id = row["NumerStacji"]
         stop_id = KPD_STOP_MAP.get(stop_id, stop_id)
         if stop_id is None:
             return None
 
         stop_name = normalize_null(row["NazwaStacji"])
+
+        arrival = TimePoint.from_str(row["Przyjazd"])
+        departure = TimePoint.from_str(row["Odjazd"])
+        while arrival < prev_departure:
+            arrival = add_24h(arrival)
+        while departure < arrival:
+            departure = add_24h(departure)
 
         if row["StacjaHandlowa"] != "1":
             departure_platform = "WAYPOINT"
@@ -129,6 +138,8 @@ class KPDStopTime:
         return cls(
             stop_id,
             stop_name,
+            arrival,
+            departure,
             departure_platform,
             departure_track,
             arrival_platform,
@@ -250,12 +261,25 @@ class LoadICKPD(LoadExternal):
                     if kpd_st.enhance(plk_st):
                         changed = True
                     combined.append(plk_st)
-            else:
-                assert tag in ("replace", "delete", "insert")
-                changed = changed or j1 != j2  # j1 != j2 => non-empty kpd_stops slice
 
+            elif tag == "replace":
+                combined.extend(
+                    sorted(
+                        chain(plk[i1:i2], self.convert_waypoints_only(kpd[j1:j2], trip_id)),
+                        key=attrgetter("departure_time"),
+                    )
+                )
+                changed = True
+
+            elif tag == "delete":
                 combined.extend(plk[i1:i2])
+
+            elif tag == "insert":
                 combined.extend(self.convert_waypoints_only(kpd[j1:j2], trip_id))
+                changed = True
+
+            else:
+                raise RuntimeError(f"invalid SequenceMatcher opcode: {tag!r}")
 
         if not changed:
             return None
@@ -387,7 +411,7 @@ class KPDTrips(Iterator[TrainKey]):
     """KPDTrips iterates over trips present in a KPD_Rozklad.csv file.
 
     The iterator works lazily, it only generates TrainKeys.
-    To extract the KPDStops, one must call the `stop_times` method.
+    To extract the KPDStopTimes, one must call the `stop_times` method.
     """
 
     GroupKey: TypeAlias = tuple[str, str]  # DataOdjazdu, NrPociagu
@@ -419,12 +443,17 @@ class KPDTrips(Iterator[TrainKey]):
         return TrainKey(Date.from_ymd_str(date_str), number)
 
     def stop_times(self) -> Generator[KPDStopTime]:
-        """Returns a generator of KPDStops of the last-generated trip.
+        """Returns a generator of KPDStopTimes of the last-generated trip.
 
         This method is only available once per trip, as the returned iterator
         is shared with the top-level CSV row iterator.
         """
-        yield from filter(None, map(KPDStopTime.from_csv_row, self._curr[1]))
+        prev_departure = TimePoint()
+        for row in self._curr[1]:
+            st = KPDStopTime.from_csv_row(row, prev_departure)
+            if st:
+                prev_departure = st.departure
+                yield st
 
 
 def normalize_platform(x: str) -> str:
@@ -477,6 +506,10 @@ def ensure_start_and_end_not_at_waypoint(stops_times: list[StopTime]) -> list[St
         end -= 1
 
     return stops_times[start : end + 1]
+
+
+def add_24h(t: TimePoint) -> TimePoint:
+    return TimePoint(seconds=t.total_seconds() + 86400)
 
 
 class FTP_TLS_Patched(FTP_TLS):
