@@ -158,7 +158,7 @@ class LoadICKPD(LoadExternal):
     def get_required_resources() -> dict[str, Resource]:
         ftp_credentials = get_apikey("IC_FTP_CREDENTIALS")
         if ftp_credentials:
-            username, _, password = ftp_credentials.strip().partition(",")
+            username, _, password = ftp_credentials.strip().partition(":")
             return {
                 "ic_kpd_rozklad.csv": ZippedResource(
                     r=FTPResource(
