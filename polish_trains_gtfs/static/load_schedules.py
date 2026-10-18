@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from collections.abc import Iterable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from operator import itemgetter
 from typing import IO, cast
 from zoneinfo import ZoneInfo
@@ -102,7 +102,7 @@ class LoadSchedules(Task):
     def load_update_timestamp(f: IO[bytes]) -> datetime:
         if ts := json.first(f, "ts"):
             return datetime.fromisoformat(ts)
-        return datetime.min.replace(tzinfo=timezone.utc)
+        return datetime.min.replace(tzinfo=UTC)
 
     @staticmethod
     def load_feed_dates(f: IO[bytes]) -> tuple[Date, Date]:
