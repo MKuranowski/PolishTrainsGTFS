@@ -84,6 +84,18 @@ class LoadStations(Task):
             ),
         )
 
+        if station.request_stop:
+            db.raw_execute(
+                "UPDATE stop_times SET drop_off_type = 3"
+                "WHERE stop_id = ? AND drop_off_type = 0",
+                (station.id,),
+            )
+            db.raw_execute(
+                "UPDATE stop_times SET pickup_type = 3"
+                "WHERE stop_id = ? AND pickup_type = 0",
+                (station.id,),
+            )
+
         if station.id in self.to_update:
             db.update(stop)  # departures are moved to a stop later on
         else:
