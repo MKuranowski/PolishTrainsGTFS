@@ -16,6 +16,7 @@ waypoints:
   # Warszawa Zachodnia
   - "206261" # Warszawa Główna Towarowa GT 22-39
   - "206262" # Warszawa Główna Towarowa GT 81-85
+  - "33514" # Warszawa Włochy
 
   # Warszawa Wschodnia - Otwock
   # Temporarily no trains run via this route

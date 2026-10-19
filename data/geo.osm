@@ -57321,7 +57321,7 @@
     <tag k="ref:station" v="51847"/>
   </node>
   <node id="40306" action="modify" lat="51.11139659349" lon="15.29390751779" version="1">
-    <tag k="platforms" v="3;4"/>
+    <tag k="platforms" v="4;5"/>
     <tag k="public_transport" v="stop_position"/>
     <tag k="ref:station" v="52506"/>
     <tag k="towards" v="51938;51805"/>
@@ -57356,7 +57356,7 @@
     <tag k="ref:station" v="52506"/>
   </node>
   <node id="40323" action="modify" lat="51.11140332661" lon="15.29394641384" version="1">
-    <tag k="name" v="3"/>
+    <tag k="name" v="5"/>
     <tag k="public_transport" v="platform"/>
     <tag k="ref:station" v="52506"/>
   </node>
@@ -62201,7 +62201,7 @@
   <node id="44869" action="modify" lat="52.4077042849" lon="16.91344141424" version="1"/>
   <node id="44870" action="modify" lat="52.40685342612" lon="16.91285132825" version="1"/>
   <node id="44871" action="modify" lat="52.40610727492" lon="16.91247045457" version="1"/>
-  <node id="44872" action="modify" lat="52.40421238686" lon="16.91186427534" version="1">
+  <node id="44872" action="modify" lat="52.40503463448" lon="16.91212731112" version="1">
     <tag k="platforms" v="9"/>
     <tag k="public_transport" v="stop_position"/>
     <tag k="ref:station" v="30601"/>
@@ -62244,7 +62244,7 @@
     <tag k="public_transport" v="platform"/>
     <tag k="ref:station" v="30601"/>
   </node>
-  <node id="44883" action="modify" lat="52.40419602141" lon="16.91201984614" version="1">
+  <node id="44883" action="modify" lat="52.40502109411" lon="16.91229080103" version="1">
     <tag k="name" v="9"/>
     <tag k="public_transport" v="platform"/>
     <tag k="ref:station" v="30601"/>
@@ -91683,6 +91683,16 @@
     <tag k="public_transport" v="platform"/>
     <tag k="ref:station" v="83105"/>
     <tag k="wheelchair" v="yes"/>
+  </node>
+  <node id="90397" action="modify" lat="52.39928661047" lon="16.91023072921" version="1">
+    <tag k="platforms" v="7"/>
+    <tag k="public_transport" v="stop_position"/>
+    <tag k="ref:station" v="30601"/>
+  </node>
+  <node id="90398" action="modify" lat="52.39926285376" lon="16.91040160603" version="1">
+    <tag k="name" v="7"/>
+    <tag k="public_transport" v="platform"/>
+    <tag k="ref:station" v="30601"/>
   </node>
   <way id="1" action="modify" version="1">
     <nd ref="15250"/>
@@ -140503,6 +140513,7 @@
     <nd ref="44872"/>
     <nd ref="44873"/>
     <nd ref="44874"/>
+    <nd ref="90397"/>
     <nd ref="44875"/>
     <nd ref="44876"/>
     <nd ref="44664"/>

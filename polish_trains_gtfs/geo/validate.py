@@ -96,9 +96,9 @@ class RailAttachmentValidator(Validator):
 
 
 class ChildEntityDistanceValidator(Validator):
-    MAX_PLATFORM_DISTANCE = 300.0
+    MAX_PLATFORM_DISTANCE = 400.0
     MAX_EXIT_DISTANCE = 500.0
-    MAX_STOP_POSITION_DISTANCE = 300.0
+    MAX_STOP_POSITION_DISTANCE = 400.0
 
     def check_station(self, station: Station) -> Iterable[Issue]:
         yield from self.check_children(station, station.platforms, self.MAX_PLATFORM_DISTANCE)
