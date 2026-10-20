@@ -20,3 +20,6 @@ force_via:
   - from: "62802" # Częstochowa Stradom
     to: "63073" # Koniecpol
     via: [50.774119, 19.128919] # LK61 midpoint between Kucelinka and Częstochowa Stradom
+  - from: "63073" # Koniecpol
+    to: "62802" # Częstochowa Stradom
+    via: [50.774119, 19.128919] # LK61 midpoint between Kucelinka and Częstochowa Stradom
