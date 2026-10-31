@@ -2,38 +2,25 @@ force_via:
   - from: "179212"  # Frankfurt (Oder)
     to: "140533"  # Berlin-Lichtenberg
     via: [52.486312, 13.551679]  # Biesenhorst, to prevent switchback at Ostkreuz
-  - from: "1107"  # Szczecin Dąbie
+
+  - from: ["1107", "1123"]  # Szczecin Dąbie, Szczecin Zdroje
     to: "273"  # Szczecin Główny
     via: [53.408761, 14.571991]  # Port Centralny
-  - from: "1123"  # Szczecin Zdroje
-    to: "273"  # Szczecin Główny
-    via: [53.408761, 14.571991]  # Port Centralny
+    oneway: true
+
   - from: "273"  # Szczecin Główny
-    to: "1107"  # Szczecin Dąbie
+    to: ["1107", "1123"]  # Szczecin Dąbie, Szczecin Zdroje
     via: [53.389366, 14.524913]  # Pomorzany
-  - from: "273"  # Szczecin Główny
-    to: "1123"  # Szczecin Zdroje
-    via: [53.389366, 14.524913]  # Pomorzany
+    oneway: true
+
   - from: "77107"  # Oświęcim
     to: "80416"  # Kraków Główny
     via: [50.002186, 19.429353]  # Zator
+
   - from: "62802" # Częstochowa Stradom
     to: "63073" # Koniecpol
     via: [50.774119, 19.128919] # LK61 midpoint between Kucelinka and Częstochowa Stradom
-  - from: "63073" # Koniecpol
-    to: "62802" # Częstochowa Stradom
-    via: [50.774119, 19.128919] # LK61 midpoint between Kucelinka and Częstochowa Stradom
 
-  # W-wa Zachodnia - LK3
   - from: "33506" # W-wa Zachodnia
-    to: "34348" # Ożarów
-    via: [52.206269, 20.914975] # W-wa Włochy
-  - from: "33506" # W-wa Zachodnia
-    to: "34603" # Sochaczew
-    via: [52.206269, 20.914975] # W-wa Włochy
-  - from: "34348" # Ożarów
-    to: "33506" # W-wa Zachodnia
-    via: [52.206269, 20.914975] # W-wa Włochy
-  - from: "34603" # Sochaczew
-    to: "33506" # W-wa Zachodnia
+    to: ["34348", "34603"] # Ożarów, Sochaczew
     via: [52.206269, 20.914975] # W-wa Włochy
