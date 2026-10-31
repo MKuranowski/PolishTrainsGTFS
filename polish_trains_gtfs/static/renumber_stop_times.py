@@ -16,7 +16,7 @@ class RenumberStopTimes(Task):
                         ROW_NUMBER() OVER (
                             PARTITION BY trip_id
                             ORDER BY stop_sequence
-                        ) AS new_stop_sequence
+                        ) - 1 AS new_stop_sequence
                     FROM stop_times
                 )
                 UPDATE stop_times
