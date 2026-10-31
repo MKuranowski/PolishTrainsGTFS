@@ -250,6 +250,20 @@ class PolishTrainsGTFS(App):
                 GenerateBusShapes("geo.osm"),
                 RemoveWaypoints(),
                 RenumberStopTimes(),
+                ExecuteSQL(
+                    statement="UPDATE stop_times SET drop_off_type = 1 WHERE stop_sequence = 0",
+                    task_name="SetNoDropOffAtFistStops",
+                ),
+                ExecuteSQL(
+                    statement=(
+                        "UPDATE stop_times SET pickup_type = 1 WHERE NOT EXISTS ("
+                        "  SELECT 1 FROM stop_times alt"
+                        "  WHERE stop_times.trip_id = alt.trip_id"
+                        "  AND alt.stop_sequence > stop_times.stop_sequence"
+                        ")"
+                    ),
+                    task_name="SetNoPickupAtLastStops",
+                ),
                 SaveGTFS(GTFS_HEADERS, args.output, ensure_order=True),
             ],
         )
