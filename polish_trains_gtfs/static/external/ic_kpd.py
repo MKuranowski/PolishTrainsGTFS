@@ -436,7 +436,10 @@ class KPDTrips(Iterator[TrainKey]):
         #       For the past 5 years that was the case.
         self._it = groupby(
             filter(
-                lambda row: row["StacjaHandlowa"] == "1" or row["NumerStacji"] in waypoints,
+                lambda row: (
+                    row["StacjaHandlowa"] == "1"
+                    or (row["BUS"] == "0" and row["NumerStacji"] in waypoints)
+                ),
                 csv_rows,
             ),
             key=itemgetter("DataOdjazdu", "NrPociagu"),
