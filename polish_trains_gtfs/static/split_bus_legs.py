@@ -66,15 +66,11 @@ class SplitBusLegs(SplitTripLegs):
         route.text_color = "FFFFFF"
 
     def get_departure_data(self, stop_time: StopTime) -> Any:
-        return (
-            stop_time.platform == "BUS"
-            or stop_time.get_extra_field("bus") == "true"
-            or (
-                # XXX: Fix for Koleje Mazowieckie - they don't always use "BUS" platforms,
-                #      sometimes they also mark buses with category starting with "Z".
-                stop_time.trip_id.startswith("PLK_KM_")
-                and (stop_time.get_extra_field("plk_category_code") or "").startswith("Z")
-            )
+        return stop_time.platform == "BUS" or (
+            # XXX: Fix for Koleje Mazowieckie - they don't always use "BUS" platforms,
+            #      sometimes they also mark buses with category starting with "Z".
+            stop_time.trip_id.startswith("PLK_KM_")
+            and (stop_time.get_extra_field("plk_category_code") or "").startswith("Z")
         )
 
     def arrival_only(self, stop_time: StopTime, previous_data: Any) -> StopTime:
@@ -91,8 +87,8 @@ class SplitBusLegs(SplitTripLegs):
             new.platform = "BUS"
             extra["track"] = ""
         else:
-            new.platform = extra.get("arrival_platform") or new.platform
-            extra["track"] = extra.get("arrival_track") or extra.get("track") or ""
+            new.platform = extra.get("arrival_platform", "")
+            extra["track"] = extra.get("arrival_track", "")
 
         new.set_extra_fields(extra)
         return new
