@@ -66,12 +66,7 @@ class SplitBusLegs(SplitTripLegs):
         route.text_color = "FFFFFF"
 
     def get_departure_data(self, stop_time: StopTime) -> Any:
-        return stop_time.platform == "BUS" or (
-            # XXX: Fix for Koleje Mazowieckie - they don't always use "BUS" platforms,
-            #      sometimes they also mark buses with category starting with "Z".
-            stop_time.trip_id.startswith("PLK_KM_")
-            and (stop_time.get_extra_field("plk_category_code") or "").startswith("Z")
-        )
+        return stop_time.platform == "BUS"
 
     def arrival_only(self, stop_time: StopTime, previous_data: Any) -> StopTime:
         if "WAYPOINT" in stop_time.platform:
