@@ -79,6 +79,8 @@ class LoadBusStops(Task):
                     self.curate_bus_stops(r.db, station_id, station.bus_stops, trips)
             else:
                 uncurated_stations.append(station_id)
+                with r.db.transaction():
+                    self.create_uncurated_bus_stop(r.db, station_id, trips)
 
         self.warn_about_uncurated_stations(r.db, uncurated_stations)
 
@@ -145,6 +147,17 @@ class LoadBusStops(Task):
         )
         self.apply_changes(db, station_id, new_stops, stop_updates)
 
+    def create_uncurated_bus_stop(
+        self,
+        db: DBConnection,
+        station_id: str,
+        trips: Iterable[tuple[int, Trip]],
+    ) -> None:
+        gtfs_id = f"{station_id}_BUS"
+        bus_stop = BusStop(0, *self.stop_locations[station_id])
+        stop_updates = StopUpdate.for_trips(trips, gtfs_id)
+        self.apply_changes(db, station_id, {gtfs_id: bus_stop}, stop_updates)
+
     def apply_changes(
         self,
         db: DBConnection,
@@ -196,6 +209,7 @@ class LoadBusStops(Task):
                     name=station.name,
                     lat=bus_stop.lat,
                     lon=bus_stop.lon,
+                    platform_code="BUS",
                     wheelchair_boarding=None,
                     location_type=Stop.LocationType.STOP,
                     parent_station=station_id,
