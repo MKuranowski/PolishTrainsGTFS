@@ -252,7 +252,7 @@ class PolishTrainsGTFS(App):
                 RenumberStopTimes(),
                 ExecuteSQL(
                     statement="UPDATE stop_times SET drop_off_type = 1 WHERE stop_sequence = 0",
-                    task_name="SetNoDropOffAtFistStops",
+                    task_name="SetNoDropOffAtFirstStops",
                 ),
                 ExecuteSQL(
                     statement=(
