@@ -172,7 +172,7 @@ class BusMatcher(Matcher):
         kd_tree = routx.KDTree.build(graph)
         self.stop_to_node.clear()
         for stop in stops:
-            if "BUS" in stop.id or stop.id == "0":
+            if "BUS" in stop.id:
                 candidate = kd_tree.find_nearest_node(stop.lat, stop.lon)
                 distance = routx.earth_distance(stop.lat, stop.lon, candidate.lat, candidate.lon)
                 if distance <= self.MAX_DISTANCE_M:

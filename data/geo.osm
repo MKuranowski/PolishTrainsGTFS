@@ -91694,6 +91694,10 @@
     <tag k="public_transport" v="platform"/>
     <tag k="ref:station" v="30601"/>
   </node>
+  <node id="90399" action="modify" lat="52.44591381905" lon="20.6507188075" version="1">
+    <tag k="highway" v="bus_stop"/>
+    <tag k="ref:station" v="0"/>
+  </node>
   <way id="1" action="modify" version="1">
     <nd ref="15250"/>
     <nd ref="15249"/>
