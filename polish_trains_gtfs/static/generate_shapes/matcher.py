@@ -157,7 +157,7 @@ class TrainMatcher(Matcher):
 
 
 class BusMatcher(Matcher):
-    MAX_DISTANCE_M = 50.0
+    MAX_DISTANCE_KM = 0.05
 
     def __init__(self) -> None:
         self.stop_to_node = dict[str, int]()
@@ -175,7 +175,7 @@ class BusMatcher(Matcher):
             if "BUS" in stop.id:
                 candidate = kd_tree.find_nearest_node(stop.lat, stop.lon)
                 distance = routx.earth_distance(stop.lat, stop.lon, candidate.lat, candidate.lon)
-                if distance <= self.MAX_DISTANCE_M:
+                if distance <= self.MAX_DISTANCE_KM:
                     self.stop_to_node[stop.id] = candidate.id
 
     def match(self, trip: Trip, stop_times: Sequence[StopTime]) -> MatchedTrip | None:
