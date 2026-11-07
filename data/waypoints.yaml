@@ -29,6 +29,10 @@ waypoints:
   # Kraków: "Small Bypass" (to/via Płaszów but not via Główny)
   - "80200" # Kraków Olsza
 
+  # Kraków - Oświęcim: Trzebinia vs Zator
+  - "78113" # Zator
+  - "77503" # Trzebinia
+
   # Łódź: Łódź Widzew to Łódź Kaliska, without direction change
   - "265209" # Łódź Olechów PZS R10 (basically Łódź Olechów Wiadukt)
 
@@ -47,3 +51,4 @@ waypoints:
   - "74153" # Dorota
   - "179007" # Długoszyn
   - "73064" # Katowice Kostuchna
+  - "75796" # Chybie
