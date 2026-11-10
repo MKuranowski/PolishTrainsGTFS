@@ -13,9 +13,8 @@ RZEPIN = "25809"
 
 class FixBerlinBusReplacement(Task):
     """Marks the Berlin Hbf - Frankfurt (Oder) (or Rzepin) stretch as a replacement bus
-    on trips terminating at Berlin Hbf without calling at Berlin Ostbahnhof.
-
-    Must run before LoadStations, as it matches on bare station IDs.
+    on PKP Intercity trips (trip_id containing "IC") terminating at Berlin Hbf
+    without calling at Berlin Ostbahnhof.
     """
 
     def execute(self, r: TaskRuntime) -> None:
@@ -30,6 +29,7 @@ class FixBerlinBusReplacement(Task):
             cast(str, i[0])
             for i in db.raw_execute(
                 "SELECT DISTINCT trip_id FROM stop_times WHERE stop_id = ? "
+                "AND trip_id LIKE '%IC%' "
                 "AND trip_id NOT IN (SELECT trip_id FROM stop_times WHERE stop_id = ?)",
                 (BERLIN_HBF, BERLIN_OSTBAHNHOF),
             )
