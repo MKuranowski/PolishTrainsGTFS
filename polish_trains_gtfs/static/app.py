@@ -14,6 +14,7 @@ from .assign_direction_id import AssignDirectionID
 from .curate_routes import CurateRoutes
 from .deduplicate_consecutive_times import DeduplicateConsecutiveTimes
 from .extract_routes import ExtractRoutes
+from .fix_berlin_bus_replacement import FixBerlinBusReplacement
 from .generate_shapes import GenerateBusShapes, GenerateShapes
 from .load_bus_stops import LoadBusStops
 from .load_schedules import LoadSchedules
@@ -212,6 +213,7 @@ class PolishTrainsGTFS(App):
                     ),
                     task_name="MoveDeparturesToWarszawaZachodniaPeron9",
                 ),
+                FixBerlinBusReplacement(),
                 ExtractRoutes(),
                 CurateRoutes(),
                 LoadStations(),

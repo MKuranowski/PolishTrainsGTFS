@@ -32,7 +32,7 @@ Data Caveats
 - Unused fallback platforms are deliberate - they may be used by the realtime feed for trains on detours.
 - Timed connections and carriage transfers are not provided - they're missing from the PKP PLK API.
 - Platform and track info is missing at stops marked by PKP PLK as disembarking only.
-- International trains are kinda messed up. Bus replacement services are sometimes missing (and remain as trains). Sometimes, only partial routes are available (OEDG, NEB). Rarely, the agency is also incorrect (NEB trains to/from Kostrzyn are reported as operated by PolRegio).
+- International trains are kinda messed up. Bus replacement services are sometimes missing (and remain as trains). The replacement bus between Berlin Hbf and Frankfurt (Oder) (or Rzepin) is inferred from trains terminating at Berlin Hbf without calling at Berlin Ostbahnhof. Sometimes, only partial routes are available (OEDG, NEB). Rarely, the agency is also incorrect (NEB trains to/from Kostrzyn are reported as operated by PolRegio).
 
 
 Realtime Caveats

@@ -91698,6 +91698,18 @@
     <tag k="highway" v="bus_stop"/>
     <tag k="ref:station" v="0"/>
   </node>
+  <node id="90400" action="modify" lat="52.52674091387" lon="13.36869299278" version="1">
+    <tag k="highway" v="bus_stop"/>
+    <tag k="ref:station" v="247482"/>
+  </node>
+  <node id="90401" action="modify" lat="52.33743391376" lon="14.54679090804" version="1">
+    <tag k="highway" v="bus_stop"/>
+    <tag k="ref:station" v="179212"/>
+  </node>
+  <node id="90402" action="modify" lat="52.34980574432" lon="14.81599106008" version="1">
+    <tag k="highway" v="bus_stop"/>
+    <tag k="ref:station" v="25809"/>
+  </node>
   <way id="1" action="modify" version="1">
     <nd ref="15250"/>
     <nd ref="15249"/>
