@@ -58,7 +58,12 @@ class LoadKM(LoadExternal):
             return
 
         trip_id = f"KM_{t.numbers[0]}_{t.version}"
-        calendar_id = self.calendars.upsert(db, self.filter_dates_outside_feed_dates(t.dates))
+        filtered_dates = self.filter_dates_outside_feed_dates(t.dates)
+
+        if not filtered_dates:
+            return
+        
+        calendar_id = self.calendars.upsert(db, filtered_dates)
 
         db.raw_execute(
             "INSERT INTO trips (trip_id, route_id, calendar_id, short_name) VALUES (?,'KM_ZL',?,?)",
