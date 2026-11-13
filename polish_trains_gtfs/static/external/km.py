@@ -11,7 +11,7 @@ from xml.sax.xmlreader import AttributesImpl
 from zoneinfo import ZoneInfo
 
 from impuls import DBConnection, HTTPResource, LocalResource, Resource, TaskRuntime
-from impuls.model import Attribution, Date, Route, Stop
+from impuls.model import Attribution, Date, FeedInfo, Route, Stop
 from impuls.tools.temporal import date_range, get_european_railway_schedule_revision
 
 from ..util.apikey import get_apikey
@@ -27,6 +27,7 @@ class LoadKM(LoadExternal):
     def __init__(self) -> None:
         super().__init__()
         self.calendars = CalendarGenerator("KM_")
+        self.feed_info: FeedInfo | None
 
     @staticmethod
     def get_required_resources() -> dict[str, Resource]:
@@ -40,6 +41,7 @@ class LoadKM(LoadExternal):
 
     def execute(self, r: TaskRuntime) -> None:
         self.calendars.clear()
+        self.feed_info = r.db.retrieve(FeedInfo, 0)
         with r.db.transaction():
             self.insert_static_objects(r.db, fetch_time=r.resources["schedules_km.xml"].fetch_time)
             sax_parse(
@@ -56,7 +58,7 @@ class LoadKM(LoadExternal):
             return
 
         trip_id = f"KM_{t.numbers[0]}_{t.version}"
-        calendar_id = self.calendars.upsert(db, t.dates)
+        calendar_id = self.calendars.upsert(db, self.filter_dates_outside_feed_dates(t.dates))
 
         db.raw_execute(
             "INSERT INTO trips (trip_id, route_id, calendar_id, short_name) VALUES (?,'KM_ZL',?,?)",
@@ -67,6 +69,15 @@ class LoadKM(LoadExternal):
             "VALUES (?, ?, ?, ?, ?)",
             ((trip_id, idx, i.id, i.arrival, i.departure) for idx, i in enumerate(t.stop_times)),
         )
+
+    def filter_dates_outside_feed_dates(self, dates: set[Date]):
+        if not self.feed_info:
+            return dates
+
+        if not (self.feed_info.start_date and self.feed_info.end_date):
+            return dates
+
+        return {date for date in dates if self.feed_info.start_date <= date <= self.feed_info.end_date}
 
     def insert_static_objects(self, db: DBConnection, fetch_time: datetime) -> None:
         fetch_time_str = fetch_time.astimezone(TZ).strftime("%Y-%m-%d %H:%M:%S")
