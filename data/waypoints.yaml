@@ -32,6 +32,9 @@ waypoints:
   # Łódź: Łódź Widzew to Łódź Kaliska, without direction change
   - "265209" # Łódź Olechów PZS R10 (basically Łódź Olechów Wiadukt)
 
+  # Zgierz - Łódź Kaliska: LK16 (direct) vs LK15+LK3
+  - "32904" # Łowicz Główny
+
   # Niespieszny Trains
   - "40345" # Góra Kalwaria
   - "47175" # Tarczyn
