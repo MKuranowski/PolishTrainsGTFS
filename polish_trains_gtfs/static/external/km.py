@@ -62,7 +62,7 @@ class LoadKM(LoadExternal):
 
         if not filtered_dates:
             return
-        
+
         calendar_id = self.calendars.upsert(db, filtered_dates)
 
         db.raw_execute(
@@ -82,7 +82,9 @@ class LoadKM(LoadExternal):
         if not (self.feed_info.start_date and self.feed_info.end_date):
             return dates
 
-        return {date for date in dates if self.feed_info.start_date <= date <= self.feed_info.end_date}
+        return {
+            date for date in dates if self.feed_info.start_date <= date <= self.feed_info.end_date
+        }
 
     def insert_static_objects(self, db: DBConnection, fetch_time: datetime) -> None:
         fetch_time_str = fetch_time.astimezone(TZ).strftime("%Y-%m-%d %H:%M:%S")
@@ -217,9 +219,8 @@ class SchedulesHandler(SAXContentHandler):
         elif name in {"include", "exclude"}:
             self.days_nesting = DaysNesting.OUTER
 
-        elif name == "train":
-            if self.train.numbers and self.train.stop_times and self.train.dates:
-                self.callback(self.train)
+        elif name == "train" and self.train.numbers and self.train.stop_times and self.train.dates:
+            self.callback(self.train)
 
     def collect_chars(self) -> str:
         assert self.chars is not None
