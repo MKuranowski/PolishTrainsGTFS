@@ -232,6 +232,10 @@ PR:
   routes:
     - route_code: '\1'
       select: [{name: '^(PKM[0-9])$'}]
+    - route_code: '\1'
+      select: [{name: '^(S[0-9])$'}]
+    - route_code: '\1'
+      select: [{name: '^F7\/(D18)$'}]
     - route_code: ''
       select: [{retain: true}]
 

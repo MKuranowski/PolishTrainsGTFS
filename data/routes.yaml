@@ -697,6 +697,24 @@ agencies:
         short_name: "PKM5"
         long_name: "Rogoźno Wlkp. — Poznań"
         color: "E8B120"
+      # S? Szczecińska Kolej Metropolitalna Routes
+      - id: PR_S1
+        short_name: "S1"
+        long_name: "Szczecin - Stargard"
+        color: "D4CD4D"
+      - id: PR_S2
+        short_name: "S2"
+        long_name: "Szczecin - Port Lotniczy Szczecin Goleniów"
+        color: "9ACEF4"
+      - id: PR_S3
+        short_name: "S3"
+        long_name: "Szczecin - Gryfino"
+        color: "D2601D"
+      # F7/D18
+      - id: PR_D18
+        short_name: "D18"
+        long_name: "Görlitz — Zgorzelec — Żary — Zielona Góra"
+        color: "BAD701"
       # SKA? routes
       - id: "PR_SKA2"
         match: [{short_name: "SKA2*"}]
