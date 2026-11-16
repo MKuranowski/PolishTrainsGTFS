@@ -43,7 +43,7 @@
 
 
 # Gdańsk area: "0" is northbound
-- agencies: ["SKMT"]
+- routes: ["SKMT_S1", "SKMT_S50"]
   outbound_pairs:
     - [258458, 7500] # Gdańsk Śródmieście -> Gdańsk Główny
 
@@ -54,6 +54,7 @@
     - [30601, 29892] # Poznań Główny -> Poznań Grabary
     - [42879, 42606] # Lasocice -> Leszno
     - [44701, 44750] # Jarocin -> Żerków
+    - [31302, 31369] # Wągrowiec -> Gołańcz
   force_for_conflicting: true
 
 # Wrocław area: "0" is westbound from Wrocław Główny
