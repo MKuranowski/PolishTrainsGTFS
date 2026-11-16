@@ -698,18 +698,59 @@ agencies:
         long_name: "Rogoźno Wlkp. — Poznań"
         color: "E8B120"
       # S? Szczecińska Kolej Metropolitalna Routes
-      - id: PR_S1
+      - id: PR_ZPM_S1
         short_name: "S1"
-        long_name: "Szczecin - Stargard"
+        long_name: "Szczecin — Stargard"
         color: "D4CD4D"
-      - id: PR_S2
+      - id: PR_ZPM_S2
         short_name: "S2"
-        long_name: "Szczecin - Port Lotniczy Szczecin Goleniów"
+        long_name: "Szczecin — Port Lotniczy Szczecin Goleniów"
         color: "9ACEF4"
-      - id: PR_S3
+      - id: PR_ZPM_S3
         short_name: "S3"
-        long_name: "Szczecin - Gryfino"
+        long_name: "Szczecin — Gryfino"
         color: "D2601D"
+      # Pomorskie S/R/RE routes
+      - id: PR_POM_S2
+        short_name: "S2"
+        long_name: "Gdańsk Wrzeszcz — Gdańsk Port Lotniczy - Gdynia Główna"
+        color: "AA2748"
+      - id: PR_POM_R3
+        short_name: "R3"
+        long_name: "Malbork — Tczew"
+        color: "90BAE6"
+      - id: PR_POM_RE3
+        short_name: "RE3"
+        long_name: "Gdynia — Gdańsk — Pruszcz Gdański (Przyspieszony)"
+        color: "90BAE6"
+      - id: PR_POM_R7
+        short_name: "R7"
+        long_name: "Tczew — Chojnice"
+        color: "A393B4"
+      - id: PR_POM_RE7
+        short_name: "RE7"
+        long_name: "Tczew — Chojnice (Przyspieszony)"
+        color: "A393B4"
+      - id: PR_POM_R11
+        short_name: "R11"
+        long_name: "Gdańsk — Kartuzy"
+        color: "D87D29"
+      - id: PR_POM_R12
+        short_name: "R12"
+        long_name: "Gdynia — Hel"
+        color: F4d55A
+      - id: PR_POM_R13
+        short_name: "R13"
+        long_name: "Grudziądz — Gardeja — Kwidzyn — Malbork"
+        color: "E2ABCC"
+      - id: PR_POM_R14
+        short_name: "R14"
+        long_name: "Chojnice — Czarne — Szczecinek"
+        color: "A6ACD6"
+      - id: PR_POM_R20
+        short_name: "R20"
+        long_name: "Chojnice — Bukowo Człuchowskie — Piła"
+        color: "7EB575"
       # F7/D18
       - id: PR_D18
         short_name: "D18"
@@ -887,7 +928,7 @@ agencies:
       - id: "SKMT_R22"
         short_name: "R22"
         long_name: "Słupsk — Ustka"
-        color: "008AD0"
+        color: "9ACACB"
       - id: "SKMT_R3"
         short_name: "R3"
         long_name: "Słupsk — Lębork — Gdynia — Gdańsk — Tczew — Malbork — Elbląg"
@@ -895,16 +936,16 @@ agencies:
       - id: "SKMT_RE3"
         short_name: "RE3"
         long_name: "Słupsk — Lębork — Gdynia — Gdańsk — Tczew — Malbork — Elbląg (Przyspieszony)"
-        color: "008AD0"
+        color: "90BAE6"
       - id: "SKMT_R31"
         short_name: "R31"
         long_name: "Gdynia — Gdańsk — Tczew — Smętowo — Laskowice Pomorskie"
-        color: "008AD0"
+        color: "6DA6D3"
       - id: "SKMT_RE31"
         short_name: "RE31"
         long_name: "Gdynia — Gdańsk — Tczew — Smętowo — Laskowice Pomorskie (Przyspieszony)"
-        color: "008AD0"
+        color: "6DA6D3"
       - id: "SKMT_R5"
         short_name: "R5"
         long_name: "Malbork — Iława Główna"
-        color: "008AD0"
+        color: "E3A27C"

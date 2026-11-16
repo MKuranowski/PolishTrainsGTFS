@@ -72,7 +72,7 @@ class CombinedSelector(Selector):
         code: str | None = None
         for s in self.selectors:
             if (m := s.matches(t, stops)) is not None:
-                code = code or self.route_code or m
+                code = code or m
             else:
                 return None  # short circuit
         return code
