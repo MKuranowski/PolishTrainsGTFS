@@ -233,14 +233,14 @@ PR:
     - route_code: '\1'
       select: [{name: '^(PKM[0-9])$'}]
     # Szczecińska Kolej Metropolitalna - must pass through Szczecin Główny
-    - route_code: 'ZPM_\1'
+    - route_code: 'ZP_\1'
       select: [{name: '^(S[0-9])$', passes_through: [273]}]
     - route_code: '\1'
       select: [{name: '^F7\/(D18)$'}]
-    - route_code: 'POM_\1'
+    - route_code: 'PM_\1'
       select: [{name: '^(RE?[0-9]+)$'}]
     # S2 in Pomorskie - must pass through Gdańsk Osowa
-    - route_code: 'POM_\1'
+    - route_code: 'PM_\1'
       select: [{name: '^(S[0-9])$', passes_through: [6122]}]
     - route_code: ''
       select: [{retain: true}]

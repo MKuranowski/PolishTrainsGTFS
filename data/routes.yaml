@@ -698,56 +698,56 @@ agencies:
         long_name: "Rogoźno Wlkp. — Poznań"
         color: "E8B120"
       # S? Szczecińska Kolej Metropolitalna Routes
-      - id: PR_ZPM_S1
+      - id: PR_ZP_S1
         short_name: "S1"
         long_name: "Szczecin — Stargard"
         color: "D4CD4D"
-      - id: PR_ZPM_S2
+      - id: PR_ZP_S2
         short_name: "S2"
         long_name: "Szczecin — Port Lotniczy Szczecin Goleniów"
         color: "9ACEF4"
-      - id: PR_ZPM_S3
+      - id: PR_ZP_S3
         short_name: "S3"
         long_name: "Szczecin — Gryfino"
         color: "D2601D"
       # Pomorskie S/R/RE routes
-      - id: PR_POM_S2
+      - id: PR_PM_S2
         short_name: "S2"
         long_name: "Gdańsk Wrzeszcz — Gdańsk Port Lotniczy - Gdynia Główna"
         color: "16A690"
-      - id: PR_POM_R3
+      - id: PR_PM_R3
         short_name: "R3"
         long_name: "Elbląg — Gdynia Główna — Słupsk"
         color: "B1120F"
-      - id: PR_POM_RE3
+      - id: PR_PM_RE3
         short_name: "RE3"
         long_name: "Elbląg — Gdynia Główna — Słupsk (Przyspieszony)"
         color: "B1120F"
-      - id: PR_POM_R7
+      - id: PR_PM_R7
         short_name: "R7"
         long_name: "Tczew — Chojnice"
         color: "EC7E05"
-      - id: PR_POM_RE7
+      - id: PR_PM_RE7
         short_name: "RE7"
         long_name: "Gdynia Główna — Tczew — Chojnice (Przyspieszony)"
         color: "EC7E05"
-      - id: PR_POM_R11
+      - id: PR_PM_R11
         short_name: "R11"
         long_name: "Gdańsk Wrzeszcz — Kartuzy — Somonino"
         color: "AEC812"
-      - id: PR_POM_R12
+      - id: PR_PM_R12
         short_name: "R12"
         long_name: "Gdynia Główna — Władysławowo — Hel"
         color: "F4A84A"
-      - id: PR_POM_R13
+      - id: PR_PM_R13
         short_name: "R13"
         long_name: "Grudziądz — Kwidzyn — Malbork"
         color: "7C70A8"
-      - id: PR_POM_R14
+      - id: PR_PM_R14
         short_name: "R14"
         long_name: "Chojnice — Szczecinek — Słupsk"
         color: "A79FCA"
-      - id: PR_POM_R20
+      - id: PR_PM_R20
         short_name: "R20"
         long_name: "Chojnice — Piła Główna"
         color: "DA0E45"
