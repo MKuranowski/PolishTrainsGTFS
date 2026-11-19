@@ -41,11 +41,27 @@
     - [79384, 79467]  # Słomniki -> Miechów
   force_for_conflicting: true
 
-
 # Gdańsk area: "0" is northbound
-- routes: ["SKMT_S1", "SKMT_S50"]
+- agencies: ["SKMT"]
+  routes:
+    [
+      "PR_PM_S2",
+      "PR_PM_R3",
+      "PR_PM_RE3",
+      "PR_PM_R7",
+      "PR_PM_RE7",
+      "PR_PM_R11",
+      "PR_PM_R12",
+      "PR_PM_R13",
+      "PR_PM_R14",
+      "PR_PM_R20",
+    ]
   outbound_pairs:
     - [258458, 7500] # Gdańsk Śródmieście -> Gdańsk Główny
+    - [21808, 21816] # Iława Główna -> Iława Miasto
+    - [4705, 263905] # Słupsk -> Słupsk Północny
+    - [14407, 15560] # Piła Główna -> Piła Podlasie
+  force_for_conflicting: true
 
 # Poznań area: "0" is northbound
 - agencies: ["KW"]
@@ -59,6 +75,7 @@
 
 # Wrocław area: "0" is westbound from Wrocław Główny
 - agencies: ["KD"]
+  routes: ["PR_D18"]
   outbound_pairs:
     - [60103, 58651]  # Wrocław Główny -> Wrocław Mikołajów
     - [56184, 178345] # Szklarska Poręba Górna -> Szklarska Poręba Huta
