@@ -251,6 +251,9 @@ KM:
       select:
         - {number: '11252/3'}
         - {number: '19226/7'}
+    - route_code: 'RE1'
+      select:
+        - {number: '31118/9'}
     - route_code: 'R60'
       select:
         - {number: '19235'}
