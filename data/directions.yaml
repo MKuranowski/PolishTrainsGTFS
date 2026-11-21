@@ -44,18 +44,16 @@
 # Gdańsk area: "0" is northbound
 - agencies: ["SKMT"]
   routes:
-    [
-      "PR_PM_S2",
-      "PR_PM_R3",
-      "PR_PM_RE3",
-      "PR_PM_R7",
-      "PR_PM_RE7",
-      "PR_PM_R11",
-      "PR_PM_R12",
-      "PR_PM_R13",
-      "PR_PM_R14",
-      "PR_PM_R20",
-    ]
+    - "PR_PM_S2"
+    - "PR_PM_R3"
+    - "PR_PM_RE3"
+    - "PR_PM_R7"
+    - "PR_PM_RE7"
+    - "PR_PM_R11"
+    - "PR_PM_R12"
+    - "PR_PM_R13"
+    - "PR_PM_R14"
+    - "PR_PM_R20"
   outbound_pairs:
     - [258458, 7500] # Gdańsk Śródmieście -> Gdańsk Główny
     - [21808, 21816] # Iława Główna -> Iława Miasto
