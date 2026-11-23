@@ -731,6 +731,14 @@ agencies:
         short_name: "RE7"
         long_name: "Gdynia Główna — Tczew — Chojnice (Przyspieszony)"
         color: "EC7E05"
+      - id: PR_PM_R8
+        short_name: "R8"
+        long_name: "Gdańsk Rębiechowo — Kościerzyna"
+        color: "427AAE" # No route color announced - only ZKA color
+      - id: PR_PM_R9
+        short_name: "R9"
+        long_name: "Gdańsk Rębiechowo — Kościerzyna"
+        color: "427AAE" # No route color announced - only ZKA color
       - id: PR_PM_R11
         short_name: "R11"
         long_name: "Gdańsk Wrzeszcz — Kartuzy — Somonino"
@@ -747,10 +755,19 @@ agencies:
         short_name: "R14"
         long_name: "Chojnice — Szczecinek — Słupsk"
         color: "A79FCA"
+      - id: PR_PM_R17
+        short_name: "R17"
+        long_name: "Kościerzyna — Lipusz — Chojnice"
+        color: "427AAE" # No route color announced - only ZKA color
       - id: PR_PM_R20
         short_name: "R20"
         long_name: "Chojnice — Piła Główna"
         color: "DA0E45"
+      # PKA
+      - id: "PR_PKA"
+        short_name: "PKA"
+        long_name: "Podkarpacka Kolej Aglomeracyjna"
+        color: "3B7D1E"
       # F7/D18
       - id: PR_D18
         short_name: "D18"

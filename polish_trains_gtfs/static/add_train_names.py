@@ -41,6 +41,7 @@ INVALID_NAMES: Mapping[str, Sequence[re.Pattern[str]]] = {
         re.compile(r"^RE?[0-9]+$"),
         re.compile(r"^S[0-9]+$"),
         re.compile(r"^SKA[0-9]$"),
+        re.compile(r"^PODKARPACKA KOLEJ AGLOMERACYJNA$", re.I),
     ],
     "RJ": [re.compile(r"^REGIOJET$", re.I)],
 }
