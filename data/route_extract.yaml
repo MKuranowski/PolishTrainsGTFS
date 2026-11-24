@@ -242,6 +242,8 @@ PR:
     # S2 in Pomorskie - must pass through Gdańsk Osowa
     - route_code: 'PM_\1'
       select: [{name: '^(S[0-9])$', passes_through: [6122]}]
+    - route_code: 'PKA'
+      select: [{name: 'PODKARPACKA KOLEJ AGLOMERACYJNA'}]
     - route_code: ''
       select: [{retain: true}]
 
