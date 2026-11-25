@@ -234,7 +234,8 @@ class GeoTripMatcher:
         return StopUpdate.for_trip(trip, stop_time_offset, replacement_id)
 
     def match_inner(self, prev_id: str | None, curr_id: str, next_id: str | None) -> str:
-        if next_id and (towards_id := self.stop_id_by_towards.get(next_id)):
+        next_station_id = next_id.partition("_")[0] if next_id else ""
+        if towards_id := self.stop_id_by_towards.get(next_station_id):
             return towards_id
 
         terminates = not prev_id or not next_id
