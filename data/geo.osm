@@ -88997,12 +88997,6 @@
     <tag k="ref:station" v="201092"/>
     <tag k="wheelchair" v="no"/>
   </node>
-  <node id="69896" action="modify" lat="52.27614710189" lon="21.02211892068" version="1">
-    <tag k="name" v="ul. Golędzinowska"/>
-    <tag k="railway" v="subway_entrance"/>
-    <tag k="ref:station" v="201092"/>
-    <tag k="wheelchair" v="no"/>
-  </node>
   <node id="69897" action="modify" lat="52.29408180495" lon="21.01298734412" version="1">
     <tag k="name" v="1;2"/>
     <tag k="public_transport" v="platform"/>
