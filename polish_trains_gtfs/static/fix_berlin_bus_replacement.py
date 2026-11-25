@@ -27,11 +27,12 @@ class FixBerlinBusReplacement(Task):
         return [
             cast(str, i[0])
             for i in db.raw_execute(
-                "SELECT DISTINCT trip_id "
-                "FROM stop_times berlin JOIN stop_times border USING (trip_id) "
-                "WHERE trip_id LIKE '%IC%' "
-                "AND berlin.stop_id = ? AND border.stop_id IN (?, ?) "
-                "AND ABS(berlin.stop_sequence - border.stop_sequence) = 1",
+                "SELECT trip_id FROM stop_times berlin "
+                "WHERE stop_id = ? AND trip_id LIKE '%IC%' AND EXISTS ("
+                "  SELECT 1 FROM stop_times"
+                "  WHERE trip_id = berlin.trip_id AND stop_id IN (?, ?)"
+                "  AND ABS(stop_sequence - berlin.stop_sequence) = 1"
+                ")",
                 (BERLIN_HBF, FRANKFURT_ODER, RZEPIN),
             )
         ]
