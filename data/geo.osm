@@ -2198,6 +2198,7 @@
     <tag k="name" v="Kolumna"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="178639"/>
+    <tag k="ref:2" v="46631"/>
     <tag k="ref:ibnr" v="1205"/>
   </node>
   <node id="366" action="modify" lat="52.04022742893" lon="21.43447900266" version="1">
@@ -16448,6 +16449,7 @@
     <tag k="name" v="Sabinka"/>
     <tag k="railway" v="station"/>
     <tag k="ref" v="39818"/>
+    <tag k="ref:2" v="39826"/>
     <tag k="ref:ibnr" v="1403"/>
   </node>
   <node id="5352" action="modify" lat="52.22017892231" lon="21.15283905923" version="1"/>
@@ -27478,7 +27480,11 @@
   <node id="15102" action="modify" lat="53.15953509824" lon="19.40335748434" version="1"/>
   <node id="15103" action="modify" lat="53.16676505953" lon="19.40419433355" version="1"/>
   <node id="15104" action="modify" lat="53.17296487469" lon="19.40494535208" version="1"/>
-  <node id="15105" action="modify" lat="53.17575578535" lon="19.40522430182" version="1"/>
+  <node id="15105" action="modify" lat="53.17575578535" lon="19.40522430182" version="1">
+    <tag k="name" v="Kretki"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="21410"/>
+  </node>
   <node id="15106" action="modify" lat="53.17953672955" lon="19.40565345526" version="1"/>
   <node id="15107" action="modify" lat="53.18127276575" lon="19.40580365896" version="1"/>
   <node id="15108" action="modify" lat="53.18282870886" lon="19.4053101325" version="1"/>
@@ -64975,8 +64981,8 @@
   <node id="47547" action="modify" lat="53.14768084925" lon="18.16202043951" version="1"/>
   <node id="47548" action="modify" lat="53.14784171565" lon="18.16303431451" version="1"/>
   <node id="47549" action="modify" lat="53.14788675813" lon="18.16401063859" version="1"/>
-  <node id="47550" action="modify" lat="53.14784815029" lon="18.16497086942" version="1"/>
-  <node id="47551" action="modify" lat="53.14770980524" lon="18.1659471935" version="1"/>
+  <node id="47550" action="modify" lat="53.14787549751" lon="18.16493331849" version="1"/>
+  <node id="47551" action="modify" lat="53.14773876122" lon="18.16595255792" version="1"/>
   <node id="47552" action="modify" lat="53.14744920057" lon="18.16705226362" version="1"/>
   <node id="47553" action="modify" lat="53.14707276881" lon="18.16804468095" version="1"/>
   <node id="47554" action="modify" lat="53.14652259338" lon="18.16894590318" version="1"/>
@@ -82136,7 +82142,11 @@
   <node id="64480" action="modify" lat="53.93258229964" lon="22.50137326956" version="1"/>
   <node id="64481" action="modify" lat="53.93068731849" lon="22.50072953939" version="1"/>
   <node id="64482" action="modify" lat="53.92823634858" lon="22.49944207907" version="1"/>
-  <node id="64483" action="modify" lat="53.92386467384" lon="22.4973392272" version="1"/>
+  <node id="64483" action="modify" lat="53.92386467384" lon="22.4973392272" version="1">
+    <tag k="name" v="Kijewo"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="11874"/>
+  </node>
   <node id="64484" action="modify" lat="53.91947990434" lon="22.49508617163" version="1"/>
   <node id="64485" action="modify" lat="53.9157139422" lon="22.49321935415" version="1"/>
   <node id="64486" action="modify" lat="53.91403305081" lon="22.49191043615" version="1"/>
@@ -82151,7 +82161,11 @@
   <node id="64495" action="modify" lat="53.89754914821" lon="22.46686933279" version="1"/>
   <node id="64496" action="modify" lat="53.89228911124" lon="22.4627065444" version="1"/>
   <node id="64497" action="modify" lat="53.8898485327" lon="22.46013162374" version="1"/>
-  <node id="64498" action="modify" lat="53.88742045824" lon="22.45738504171" version="1"/>
+  <node id="64498" action="modify" lat="53.88742045824" lon="22.45738504171" version="1">
+    <tag k="name" v="Chełchy"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="12021"/>
+  </node>
   <node id="64499" action="modify" lat="53.87931320893" lon="22.44843719244" version="1"/>
   <node id="64500" action="modify" lat="53.87541712274" lon="22.444081285" version="1"/>
   <node id="64501" action="modify" lat="53.87359545141" lon="22.44178531408" version="1"/>
@@ -91698,15 +91712,35 @@
     <tag k="highway" v="bus_stop"/>
     <tag k="ref:station" v="0"/>
   </node>
-  <node id="90400" action="modify" lat="52.52674091387" lon="13.36869299278" version="1">
+  <node id="90400" action="modify" lat="53.13615116728" lon="17.56766139278" version="1">
+    <tag k="name" v="Nakło nad Notecią Zachodnie"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="281431"/>
+  </node>
+  <node id="90401" action="modify" lat="53.14763513315" lon="18.16643443604" version="1">
+    <tag k="name" v="Bydgoszcz Stary Fordon"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="281290"/>
+  </node>
+  <node id="90402" action="modify" lat="52.79955839029" lon="17.21183498061" version="1">
+    <tag k="name" v="Wągrowiec Południowy"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="281418"/>
+  </node>
+  <node id="90403" action="modify" lat="53.24189517806" lon="19.41089551899" version="1">
+    <tag k="name" v="Brodnica Południowa"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="281384"/>
+  </node>
+  <node id="90404" action="modify" lat="52.52674091387" lon="13.36869299278" version="1">
     <tag k="highway" v="bus_stop"/>
     <tag k="ref:station" v="247482"/>
   </node>
-  <node id="90401" action="modify" lat="52.33743391376" lon="14.54679090804" version="1">
+  <node id="90405" action="modify" lat="52.33743391376" lon="14.54679090804" version="1">
     <tag k="highway" v="bus_stop"/>
     <tag k="ref:station" v="179212"/>
   </node>
-  <node id="90402" action="modify" lat="52.34980574432" lon="14.81599106008" version="1">
+  <node id="90406" action="modify" lat="52.34980574432" lon="14.81599106008" version="1">
     <tag k="highway" v="bus_stop"/>
     <tag k="ref:station" v="25809"/>
   </node>
@@ -91830,6 +91864,7 @@
     <nd ref="15135"/>
     <nd ref="15134"/>
     <nd ref="15133"/>
+    <nd ref="90403"/>
     <nd ref="15132"/>
     <nd ref="15131"/>
     <nd ref="15130"/>
@@ -128692,6 +128727,7 @@
     <nd ref="46873"/>
     <nd ref="46874"/>
     <nd ref="46875"/>
+    <nd ref="90400"/>
     <nd ref="46876"/>
     <nd ref="46877"/>
     <nd ref="46878"/>
@@ -141931,6 +141967,7 @@
     <nd ref="46339"/>
     <nd ref="46340"/>
     <nd ref="46341"/>
+    <nd ref="90402"/>
     <nd ref="46342"/>
     <nd ref="46343"/>
     <nd ref="46344"/>
@@ -143562,6 +143599,7 @@
     <nd ref="47549"/>
     <nd ref="47550"/>
     <nd ref="47551"/>
+    <nd ref="90401"/>
     <nd ref="47552"/>
     <nd ref="47553"/>
     <nd ref="47554"/>

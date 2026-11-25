@@ -697,6 +697,82 @@ agencies:
         short_name: "PKM5"
         long_name: "Rogoźno Wlkp. — Poznań"
         color: "E8B120"
+      # S? Szczecińska Kolej Metropolitalna Routes
+      - id: PR_ZP_S1
+        short_name: "S1"
+        long_name: "Szczecin — Stargard"
+        color: "D4CD4D"
+      - id: PR_ZP_S2
+        short_name: "S2"
+        long_name: "Szczecin — Port Lotniczy Szczecin Goleniów"
+        color: "9ACEF4"
+      - id: PR_ZP_S3
+        short_name: "S3"
+        long_name: "Szczecin — Gryfino"
+        color: "D2601D"
+      # Pomorskie S/R/RE routes
+      - id: PR_PM_S2
+        short_name: "S2"
+        long_name: "Gdańsk Wrzeszcz — Gdańsk Port Lotniczy - Gdynia Główna"
+        color: "16A690"
+      - id: PR_PM_R3
+        short_name: "R3"
+        long_name: "Elbląg — Gdynia Główna — Słupsk"
+        color: "B1120F"
+      - id: PR_PM_RE3
+        short_name: "RE3"
+        long_name: "Elbląg — Gdynia Główna — Słupsk (Przyspieszony)"
+        color: "B1120F"
+      - id: PR_PM_R7
+        short_name: "R7"
+        long_name: "Tczew — Chojnice"
+        color: "EC7E05"
+      - id: PR_PM_RE7
+        short_name: "RE7"
+        long_name: "Gdynia Główna — Tczew — Chojnice (Przyspieszony)"
+        color: "EC7E05"
+      - id: PR_PM_R8
+        short_name: "R8"
+        long_name: "Gdańsk Rębiechowo — Kościerzyna"
+        color: "427AAE" # No route color announced - only ZKA color
+      - id: PR_PM_R9
+        short_name: "R9"
+        long_name: "Gdańsk Rębiechowo — Kościerzyna"
+        color: "427AAE" # No route color announced - only ZKA color
+      - id: PR_PM_R11
+        short_name: "R11"
+        long_name: "Gdańsk Wrzeszcz — Kartuzy — Somonino"
+        color: "AEC812"
+      - id: PR_PM_R12
+        short_name: "R12"
+        long_name: "Gdynia Główna — Władysławowo — Hel"
+        color: "F4A84A"
+      - id: PR_PM_R13
+        short_name: "R13"
+        long_name: "Grudziądz — Kwidzyn — Malbork"
+        color: "7C70A8"
+      - id: PR_PM_R14
+        short_name: "R14"
+        long_name: "Chojnice — Szczecinek — Słupsk"
+        color: "A79FCA"
+      - id: PR_PM_R17
+        short_name: "R17"
+        long_name: "Kościerzyna — Lipusz — Chojnice"
+        color: "427AAE" # No route color announced - only ZKA color
+      - id: PR_PM_R20
+        short_name: "R20"
+        long_name: "Chojnice — Piła Główna"
+        color: "DA0E45"
+      # PKA
+      - id: "PR_PKA"
+        short_name: "PKA"
+        long_name: "Podkarpacka Kolej Aglomeracyjna"
+        color: "3B7D1E"
+      # F7/D18
+      - id: PR_D18
+        short_name: "D18"
+        long_name: "Görlitz — Zgorzelec — Żary — Zielona Góra"
+        color: "BAD701"
       # SKA? routes
       - id: "PR_SKA2"
         match: [{short_name: "SKA2*"}]
@@ -865,28 +941,28 @@ agencies:
       - id: "SKMT_S1"
         short_name: "S1"
         long_name: "Gdańsk Śródmieście — Gdynia Cisowa (— Wejherowo — Lębork)"
-        color: "008AD0"
+        color: "16A690"
       - id: "SKMT_R22"
         short_name: "R22"
-        long_name: "Słupsk — Ustka"
-        color: "008AD0"
+        long_name: "Słupsk — Ustka Uroczysko"
+        color: "DEA02A"
       - id: "SKMT_R3"
         short_name: "R3"
-        long_name: "Słupsk — Lębork — Gdynia — Gdańsk — Tczew — Malbork — Elbląg"
-        color: "008AD0"
+        long_name: "Elbląg — Gdynia Główna — Słupsk"
+        color: "B1120F"
       - id: "SKMT_RE3"
         short_name: "RE3"
-        long_name: "Słupsk — Lębork — Gdynia — Gdańsk — Tczew — Malbork — Elbląg (Przyspieszony)"
-        color: "008AD0"
+        long_name: "Elbląg — Gdynia Główna — Słupsk (Przyspieszony)"
+        color: "B1120F"
       - id: "SKMT_R31"
         short_name: "R31"
-        long_name: "Gdynia — Gdańsk — Tczew — Smętowo — Laskowice Pomorskie"
-        color: "008AD0"
+        long_name: "Gdynia Chylonia — Laskowice Pomorskie"
+        color: "0E9BD3"
       - id: "SKMT_RE31"
         short_name: "RE31"
-        long_name: "Gdynia — Gdańsk — Tczew — Smętowo — Laskowice Pomorskie (Przyspieszony)"
-        color: "008AD0"
+        long_name: "Gdynia Chylonia — Laskowice Pomorskie (Przyspieszony)"
+        color: "0E9BD3"
       - id: "SKMT_R5"
         short_name: "R5"
-        long_name: "Malbork — Iława Główna"
-        color: "008AD0"
+        long_name: "Malbork — Prabuty — Iława Główna"
+        color: "0A9044"

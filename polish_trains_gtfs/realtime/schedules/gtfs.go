@@ -366,8 +366,8 @@ func extractTrainNumbers(tripsRow map[string]string) (numbers []string) {
 
 func expandTrainNumber(s string) []string {
 	parts := strings.Split(s, "/")
-	if len(parts) == 2 && len(parts[1]) == 1 {
-		parts[1] = parts[0][0:len(parts)-1] + parts[1]
+	if len(parts) == 2 && len(parts[0]) > 0 && len(parts[1]) == 1 {
+		parts[1] = parts[0][:len(parts[0])-1] + parts[1]
 	}
 	return parts
 }
