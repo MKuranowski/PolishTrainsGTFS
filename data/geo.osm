@@ -15585,7 +15585,12 @@
   <node id="4532" action="modify" lat="52.17175378314" lon="22.04558014333" version="1"/>
   <node id="4533" action="modify" lat="52.13228944584" lon="21.24045609891" version="1"/>
   <node id="4534" action="modify" lat="52.6186505383" lon="20.76976059794" version="1"/>
-  <node id="4535" action="modify" lat="51.34870793113" lon="21.07721148849" version="1"/>
+  <node id="4535" action="modify" lat="51.34870793113" lon="21.07721148849" version="1">
+    <tag k="name" v="Radom Krychnowice"/>
+    <tag k="passenger" v="no"/>
+    <tag k="railway" v="station"/>
+    <tag k="ref" v="48397"/>
+  </node>
   <node id="4536" action="modify" lat="52.15772310125" lon="20.76681553781" version="1"/>
   <node id="4537" action="modify" lat="53.316903056" lon="20.05279536724" version="1"/>
   <node id="4538" action="modify" lat="51.50649876466" lon="21.68070312023" version="1"/>
