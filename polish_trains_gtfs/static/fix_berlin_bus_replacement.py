@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 Mikołaj Kuranowski
+# SPDX-FileCopyrightText: 2026 Marcin Kasznia
 # SPDX-License-Identifier: MIT
 
 from typing import cast
@@ -6,15 +6,14 @@ from typing import cast
 from impuls import DBConnection, Task, TaskRuntime
 
 BERLIN_HBF = "247482"
-BERLIN_OSTBAHNHOF = "246776"
 FRANKFURT_ODER = "179212"
 RZEPIN = "25809"
 
 
 class FixBerlinBusReplacement(Task):
     """Marks the Berlin Hbf - Frankfurt (Oder) (or Rzepin) stretch as a replacement bus
-    on PKP Intercity trips (trip_id containing "IC") terminating at Berlin Hbf
-    without calling at Berlin Ostbahnhof.
+    on PKP Intercity trips (trip_id containing "IC") starting or ending at Berlin Hbf,
+    which run non-stop between those stations.
     """
 
     def execute(self, r: TaskRuntime) -> None:
@@ -28,10 +27,12 @@ class FixBerlinBusReplacement(Task):
         return [
             cast(str, i[0])
             for i in db.raw_execute(
-                "SELECT DISTINCT trip_id FROM stop_times WHERE stop_id = ? "
-                "AND trip_id LIKE '%IC%' "
-                "AND trip_id NOT IN (SELECT trip_id FROM stop_times WHERE stop_id = ?)",
-                (BERLIN_HBF, BERLIN_OSTBAHNHOF),
+                "SELECT DISTINCT trip_id "
+                "FROM stop_times berlin JOIN stop_times border USING (trip_id) "
+                "WHERE trip_id LIKE '%IC%' "
+                "AND berlin.stop_id = ? AND border.stop_id IN (?, ?) "
+                "AND ABS(berlin.stop_sequence - border.stop_sequence) = 1",
+                (BERLIN_HBF, FRANKFURT_ODER, RZEPIN),
             )
         ]
 
@@ -55,7 +56,7 @@ class FixBerlinBusReplacement(Task):
         boundary = self.find_boundary_sequence(stops)
         if boundary is None:
             self.logger.warning(
-                "Trip %s starts or ends at Berlin Hbf without Ostbahnhof, "
+                "Trip %s starts or ends at Berlin Hbf, "
                 "but calls at neither Frankfurt (Oder) nor Rzepin",
                 trip_id,
             )
