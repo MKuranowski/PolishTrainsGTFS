@@ -5,6 +5,8 @@ from typing import cast
 
 from impuls import DBConnection, Task, TaskRuntime
 
+from .util import describe
+
 BERLIN_HBF = "247482"
 FRANKFURT_ODER = "179212"
 RZEPIN = "25809"
@@ -57,9 +59,8 @@ class FixBerlinBusReplacement(Task):
         boundary = self.find_boundary_sequence(stops)
         if boundary is None:
             self.logger.warning(
-                "Trip %s starts or ends at Berlin Hbf, "
-                "but calls at neither Frankfurt (Oder) nor Rzepin",
-                trip_id,
+                "%s starts or ends at Berlin Hbf, but calls at neither Frankfurt (Oder) nor Rzepin",
+                describe.trip(db, trip_id),
             )
             return False
 
