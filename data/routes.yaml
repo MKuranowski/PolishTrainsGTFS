@@ -767,7 +767,7 @@ agencies:
       - id: "PR_PKA"
         short_name: "PKA"
         long_name: "Podkarpacka Kolej Aglomeracyjna"
-        color: "3B7D1E"
+        color: "009889"
       # F7/D18
       - id: PR_D18
         short_name: "D18"
